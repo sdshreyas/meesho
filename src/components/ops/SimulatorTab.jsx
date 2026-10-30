@@ -2,8 +2,9 @@ import { useState } from 'react'
 import { Circle, MapContainer, Marker, TileLayer, Tooltip, useMapEvents } from 'react-leaflet'
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip as RTooltip, XAxis, YAxis } from 'recharts'
 import { api } from '../../api.js'
-import { INDIA_CENTER, Kpi, dcIcon, money, num, pct, utilTone } from './common.jsx'
+import { INDIA_CENTER, Kpi, airhubIcon, dcIcon, money, num, pct } from './common.jsx'
 
+const siteName = (type, city) => (type === 'sort' ? `Valmo Sort Centre, ${city}` : `Valmo Base, ${city}`)
 const distance = (a, b) => Math.hypot(a.lat - b.lat, (a.lng - b.lng) * Math.cos((a.lat * Math.PI) / 180))
 
 function ClickToAdd({ onAdd }) {
@@ -23,7 +24,7 @@ export default function SimulatorTab({ network }) {
     const c = nearestCity(pt)
     setProposals((p) => [
       ...p,
-      { id: 'NEW-' + Date.now(), city: c.name, name: `Valmo ${network.dcTypes[type].label}, ${c.name}`, type, lat: pt.lat, lng: pt.lng, fixedMonthly: network.dcTypes[type].fixedMonthly },
+      { id: 'NEW-' + Date.now(), city: c.name, name: siteName(type, c.name), type, lat: pt.lat, lng: pt.lng, fixedMonthly: network.dcTypes[type].fixedMonthly },
     ])
     setResult(null)
   }
@@ -51,8 +52,8 @@ export default function SimulatorTab({ network }) {
     <div className="ops-split">
       <aside className="ops-side">
         <div className="box">
-          <b>🧪 New distribution centre scenario</b>
-          <small className="muted">Click anywhere on the map to drop a new Valmo DC. Then replay past orders to see whether total logistics cost goes up or down.</small>
+          <b>🧪 New sort centre / Valmo Base scenario</b>
+          <small className="muted">Click anywhere on the map to drop a new Valmo Base or Sort Centre. New Airhubs open in cities it can serve; then past orders are replayed through the 5-stage model to see whether total logistics cost goes up or down.</small>
           {proposals.length === 0 && <div className="empty-hint">No DCs added yet — click the map.</div>}
           {proposals.map((p) => (
             <div key={p.id} className="proposal">
@@ -62,7 +63,7 @@ export default function SimulatorTab({ network }) {
               </div>
               <div className="form-row tight">
                 <label>Type
-                  <select value={p.type} onChange={(e) => update(p.id, { type: e.target.value, fixedMonthly: network.dcTypes[e.target.value].fixedMonthly, name: `Valmo ${network.dcTypes[e.target.value].label}, ${p.city}` })}>
+                  <select value={p.type} onChange={(e) => update(p.id, { type: e.target.value, fixedMonthly: network.dcTypes[e.target.value].fixedMonthly, name: siteName(e.target.value, p.city) })}>
                     {Object.entries(network.dcTypes).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                   </select>
                 </label>
@@ -81,8 +82,8 @@ export default function SimulatorTab({ network }) {
         </div>
 
         <div className="box">
-          <b>💡 Where should the next hub go?</b>
-          <small className="muted">Tests a regional hub in every city without Valmo coverage on last month's orders, after its fixed cost.</small>
+          <b>💡 Where should the next Valmo Base go?</b>
+          <small className="muted">Shortlists cities with uncovered demand or suppliers, replays the last 2 weeks with a Valmo Base there and ranks them by monthly saving after fixed cost.</small>
           <button className="btn-outline wide" disabled={!!busy} onClick={suggest}>{busy === 'suggest' ? 'Testing every city…' : 'Suggest best locations'}</button>
           {suggestions && (
             <ol className="suggest-list">
@@ -108,8 +109,9 @@ export default function SimulatorTab({ network }) {
               <Marker key={d.id} position={[d.lat, d.lng]} icon={dcIcon(d)}><Tooltip>{d.name}</Tooltip></Marker>
             ))}
             {network.dcs.map((d) => (
-              <Circle key={'r' + d.id} center={[d.lat, d.lng]} radius={(d.lastMileKm / 1.25) * 1000} pathOptions={{ color: '#9f2089', weight: 1, fillOpacity: 0.04, dashArray: '4 4' }} />
+              <Circle key={'r' + d.id} center={[d.lat, d.lng]} radius={(d.airhubKm / 1.25) * 1000} pathOptions={{ color: '#9f2089', weight: 1, fillOpacity: 0.04, dashArray: '4 4' }} />
             ))}
+            {network.airhubs.map((a) => <Marker key={a.id} position={[a.lat, a.lng]} icon={airhubIcon}><Tooltip>{a.name}</Tooltip></Marker>)}
             {suggestions?.results.map((s, i) => (
               <Marker key={'s' + s.cityId} position={[s.lat, s.lng]} icon={dcIcon({ type: 'hub' }, 'cand', String(i + 1))}>
                 <Tooltip>#{i + 1} {s.name}: {money(s.net)} / month net</Tooltip>
@@ -117,7 +119,7 @@ export default function SimulatorTab({ network }) {
             ))}
             {proposals.map((p) => [
               <Marker key={p.id} position={[p.lat, p.lng]} icon={dcIcon(p, 'new', '+')}><Tooltip permanent direction="top">New: {p.city}</Tooltip></Marker>,
-              <Circle key={p.id + 'r'} center={[p.lat, p.lng]} radius={(network.dcTypes[p.type].lastMileKm / 1.25) * 1000} pathOptions={{ color: '#f76707', weight: 2, fillOpacity: 0.08 }} />,
+              <Circle key={p.id + 'r'} center={[p.lat, p.lng]} radius={(network.dcTypes[p.type].airhubKm / 1.25) * 1000} pathOptions={{ color: '#f76707', weight: 2, fillOpacity: 0.08 }} />,
             ])}
           </MapContainer>
         </div>
@@ -134,7 +136,7 @@ export default function SimulatorTab({ network }) {
               <Kpi label="With new DC (variable)" value={money(result.scenario.cost)} sub={`₹${result.scenario.perOrder.toFixed(1)} / order`} />
               <Kpi label="New DC fixed cost" value={money(result.fixed)} sub={`${days / 30} month(s)`} />
               <Kpi label="Net impact" value={(good ? '' : '+') + money(-result.net)} sub={good ? 'saving' : 'extra cost'} tone={good ? 'green' : 'red'} />
-              <Kpi label="Orders on Valmo" value={pct(result.valmoShare.scenario)} sub={`was ${pct(result.valmoShare.baseline)}`} tone="purple" />
+              <Kpi label="Orders on Valmo network" value={pct(result.valmoShare.scenario)} sub={`was ${pct(result.valmoShare.baseline)} · +${result.newAirhubs.length} Airhubs`} tone="purple" />
             </div>
             <div className="sim-grid">
               <div>
@@ -154,15 +156,14 @@ export default function SimulatorTab({ network }) {
               <div>
                 <b>New DC performance</b>
                 <table className="sku-table">
-                  <thead><tr><th>DC</th><th>Orders/day</th><th>Fleet (auto-sized)</th><th>Bikes</th><th>Vans</th></tr></thead>
+                  <thead><tr><th>New site</th><th>Parcels/day</th><th>Contracted trucks (auto-sized)</th><th>Truck fill</th></tr></thead>
                   <tbody>
                     {result.newDcStats.map((u) => (
                       <tr key={u.id}>
                         <td>{u.name.replace('Valmo ', '')}</td>
                         <td>{num(u.orders)}</td>
-                        <td>{u.fleet ? `${u.fleet.bike} bikes · ${u.fleet.van} vans · ${u.fleet.truck} trucks` : '—'}</td>
-                        <td><span className={'pill ' + utilTone(u.bike)}>{u.bike == null ? '—' : pct(u.bike)}</span></td>
-                        <td><span className={'pill ' + utilTone(u.van)}>{u.van == null ? '—' : pct(u.van)}</span></td>
+                        <td>{u.fleet ? `${u.fleet.t32} × 32 ft · ${u.fleet.t19} × 19 ft · ${u.fleet.t14} × 14 ft` : '—'}</td>
+                        <td>{u.fill == null ? '—' : <span className={'pill ' + (u.fill > 0.75 ? 'green' : u.fill > 0.5 ? 'amber' : 'red')}>{pct(u.fill)}</span>}</td>
                       </tr>
                     ))}
                   </tbody>

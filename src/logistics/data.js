@@ -94,19 +94,19 @@ export const BASE_DCS = [
   ['Lucknow', 'hub', 26.85, 80.95], ['Patna', 'hub', 25.59, 85.14], ['Indore', 'hub', 22.72, 75.86],
   ['Kochi', 'hub', 9.93, 76.27], ['Ludhiana', 'hub', 30.9, 75.86], ['Surat', 'hub', 21.17, 72.83],
   ['Guwahati', 'hub', 26.14, 91.74], ['Bhubaneswar', 'hub', 20.3, 85.82], ['Pune', 'hub', 18.52, 73.86],
-].map(([name, type, lat, lng]) => ({ id: 'DC-' + name, name: `Valmo ${type === 'sort' ? 'Sort Centre' : 'Hub'}, ${name}`, city: name, type, lat, lng }))
+].map(([name, type, lat, lng]) => ({ id: 'DC-' + name, name: `${type === 'sort' ? 'Valmo Sort Centre' : 'Valmo Base'}, ${name}`, city: name, type, lat, lng }))
 
 // Service reach and fixed cost per DC type (fixed cost is per month at real scale)
 export const DC_TYPES = {
-  sort: { label: 'Sort centre', firstMileKm: 140, lastMileKm: 110, fixedMonthly: 4500000 },
-  hub: { label: 'Regional hub', firstMileKm: 120, lastMileKm: 150, fixedMonthly: 1500000 },
+  sort: { label: 'Sort Centre', firstMileKm: 140, lastMileKm: 110, airhubKm: 320, sortFee: 2.2, fixedMonthly: 4500000 },
+  hub: { label: 'Valmo Base', firstMileKm: 120, lastMileKm: 150, airhubKm: 260, sortFee: 1.8, fixedMonthly: 1500000 },
 }
 
 // Generic external logistics partners (rate per shipment, real ₹)
 export const PARTNERS = [
-  { id: 'XP', name: 'Partner X · Express', rates: { local: 34, regional: 42, metro: 48, national: 58, special: 76 }, extra500: 22, codPct: 1.5, codMin: 18, etaBase: 1, kmPerDay: 900 },
-  { id: 'YS', name: 'Partner Y · Surface', rates: { local: 30, regional: 37, metro: 43, national: 50, special: 68 }, extra500: 17, codPct: 1.5, codMin: 16, etaBase: 2, kmPerDay: 500 },
-  { id: 'ZR', name: 'Partner Z · Regional', rates: { local: 27, regional: 33 }, extra500: 14, codPct: 1.2, codMin: 14, etaBase: 1, kmPerDay: 450 },
+  { id: 'XP', name: 'Partner X · Express', rates: { local: 27, regional: 32, metro: 36, national: 42, special: 58 }, extra500: 10, codPct: 1.5, codMin: 10, rtoShare: 1, etaBase: 1, kmPerDay: 900 },
+  { id: 'YS', name: 'Partner Y · Surface', rates: { local: 23, regional: 27, metro: 31, national: 36, special: 50 }, extra500: 8, codPct: 1.5, codMin: 9, rtoShare: 1, etaBase: 2, kmPerDay: 500 },
+  { id: 'ZR', name: 'Partner Z · Regional', rates: { local: 20, regional: 25 }, extra500: 6, codPct: 1.2, codMin: 8, rtoShare: 1, etaBase: 1, kmPerDay: 450 },
 ]
 
 // Seller clusters: where small manufacturers actually sit
@@ -164,6 +164,24 @@ const WEIGHT = {
   Handbags: 0.7, 'Women Footwear': 0.9, 'Men Footwear': 1.1, Makeup: 0.15, Fragrances: 0.35, 'Skin Care': 0.4,
   Kitchen: 0.8, 'Home Decor': 1.2, 'Mobile Accessories': 0.3, Fitness: 1.0,
 }
+// Packed carton size (cm) by subcategory; heavy appliances by price band
+const DIMS = {
+  Dresses: [26, 20, 4], 'Tops & Kurtis': [24, 18, 3], Shirts: [26, 20, 4], Jewellery: [10, 8, 3], Watches: [12, 9, 7],
+  Sunglasses: [16, 7, 5], Handbags: [30, 24, 10], 'Women Footwear': [28, 18, 10], 'Men Footwear': [31, 20, 11],
+  Makeup: [10, 7, 4], Fragrances: [12, 7, 7], 'Skin Care': [16, 7, 5], Kitchen: [24, 15, 8], 'Home Decor': [25, 20, 15],
+  'Mobile Accessories': [13, 9, 5], Fitness: [24, 24, 24],
+}
+export function dimsOf(p) {
+  if (p.price > 4000) return [52, 38, 32] // microwave
+  if (p.price > 1000) return [36, 28, 26] // mixer / induction
+  if (p.price > 800) return [30, 25, 18]
+  return DIMS[p.subcategory] ?? [20, 15, 10]
+}
+/** Shipping volume in m³ (carton + 15% packing air) */
+export const volumeOf = (p) => { const [l, w, h] = dimsOf(p); return (l * w * h * 1.1) / 1e6 }
+/** Courier volumetric weight (L×W×H / 5000) */
+export const volKgOf = (p) => { const [l, w, h] = dimsOf(p); return (l * w * h) / 5000 }
+
 export function weightOf(p) {
   if (p.price > 2000) return 12
   if (p.price > 800) return 3.5
@@ -208,6 +226,7 @@ function buildOrders() {
       const sellers = sellersByProduct[product.id]
       const seller = pick(r, sellers, (s) => s.rating / (1 + km(s, city) / 700))
       const qty = r() < 0.12 ? 2 : 1
+      const hour = 8 + Math.min(15.9, -Math.log(1 - r()) * 5) // more orders in the morning, long evening tail
       orders.push({
         id: `H${orders.length + 1}`,
         day,
@@ -216,7 +235,10 @@ function buildOrders() {
         sellerId: seller.id,
         cityId: city.id,
         qty,
+        hour: Math.round(hour * 10) / 10,
         weight: Math.round(weightOf(product) * qty * 100) / 100,
+        volume: volumeOf(product) * qty,
+        chargeKg: Math.max(weightOf(product), volKgOf(product)) * qty,
         value: product.price * qty,
         cod: r() < { 1: 0.45, 2: 0.6, 3: 0.75 }[city.tier],
       })

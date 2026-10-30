@@ -22,13 +22,18 @@ Live: https://sdshreyas.github.io/meesho/
 
 ## Valmo Control Tower (log in as Valmo Ops · 90000 00001 · OTP 123456)
 
+Modelled on Valmo's 5-stage flow: **first mile** (Valmo Pilots → Airhub, Captain manifests) → **source sort** (feeder to a Valmo Base / Sort Centre, Handlers batch by region) → **line haul** (partnered trucks) → **destination sort** (re-sort + feeder to Airhub) → **last mile** (Airhub Pilots, paid per drop).
+
 | Feature | Where |
 | --- | --- |
-| Fake logistics world: 93 cities, 18 Valmo DCs, 3 external partners, 154 sellers, 6 months of orders (1 record = 3,000 orders) | `src/logistics/data.js` |
-| Cost model (first mile, sorting, line haul, last mile, COD) and daily optimiser inside fleet capacity | `src/logistics/optimizer.js` |
-| Demand forecast per product x city (8-week weighted average + trend + festive uplift, smoothed city split) | `src/logistics/forecast.js` |
-| API: network, forecast, quote, optimize, simulate, suggest | `src/mocks/logisticsHandlers.js` |
-| Screens: network & demand map, optimiser, new-DC simulator | `src/pages/Ops.jsx`, `src/components/ops/` |
+| Logistics world: 93 cities, 7 Sort Centres + 11 Valmo Bases, 64 Airhubs, 3 external partners, 154 sellers, 6 months of orders with carton sizes (1 record = 3,000 orders) | `src/logistics/data.js` |
+| 5-stage cost model, vehicle catalogue (2W, e-3W, Tata Ace, 14/19/32 ft) with volume, payload, ₹/km, toll, driver and fixed cost; cheapest vehicle mix per leg; last-mile and RTO model; 7 routes per order incl. hybrids; contracted fleet + spot premium | `src/logistics/optimizer.js` |
+| Batch analysis between two dates: hour-by-hour timing per stage, waiting at sort centres (truck dispatch threshold) and at Airhubs, per product and per lane | `src/logistics/batch.js` |
+| Demand forecast per product × city | `src/logistics/forecast.js` |
+| API: network, forecast, quote, optimize, batch, simulate, suggest | `src/mocks/logisticsHandlers.js` |
+| Screens: network & demand, optimiser, batch analysis, new-site simulator | `src/pages/Ops.jsx`, `src/components/ops/` |
+
+Calibration (public analyst estimates): Meesho's blended logistics cost ≈ ₹46 per order in FY25, Valmo in the low ₹40s, 3PLs ₹48–51; COD return rates 25–30% industry-wide; first-attempt delivery success ~60–73% in tier 2/3. Rider payouts per parcel aren't published, so the pilot payout (₹650/day ÷ drops) is an assumption, editable in `COST`.
 
 ## API (served in-browser by MSW)
 

@@ -6,7 +6,7 @@
 import { CITIES, ORDERS, SCALE, productById } from './data.js'
 import { FESTIVAL } from '../engine/config.js'
 
-const SHRINK = 25 // pseudo-orders of prior
+const SHRINK = 4 // pseudo-orders of prior: small, so each product keeps its own geography
 
 function weeksBack(orders, weeks = 8) {
   const last = new Date(orders[orders.length - 1].day + 'T00:00:00Z').getTime()
