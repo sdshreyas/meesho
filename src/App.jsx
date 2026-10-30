@@ -7,10 +7,12 @@ import Cart from './pages/Cart.jsx'
 import Orders from './pages/Orders.jsx'
 import Track from './pages/Track.jsx'
 import Seller from './pages/Seller.jsx'
+import Login from './pages/Login.jsx'
 
 function Shell() {
-  const { profile, t } = useApp()
+  const { profile, session, t } = useApp()
   const seller = profile.type === 'seller'
+  if (!session) return <Login />
   return (
     <>
       <Header />

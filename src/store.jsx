@@ -43,6 +43,7 @@ export function AppProvider({ children }) {
   const [lang, setLangRaw] = usePersisted('lang', 'hi')
   const [nudges, setNudges] = usePersisted('nudges', true)
   const [carts, setCarts] = usePersisted('carts', {})
+  const [session, setSession] = usePersisted('session', null)
   const [tr, setTr] = useState({ lang: 'en', map: {}, source: null })
   const [translating, setTranslating] = useState(false)
 
@@ -57,6 +58,18 @@ export function AppProvider({ children }) {
     },
     [setProfileId, setLangRaw],
   )
+
+  const login = useCallback(
+    (profileId, token) => {
+      switchProfile(profileId)
+      setSession({ profileId, token, at: Date.now() })
+    },
+    [switchProfile, setSession],
+  )
+  const logout = useCallback(() => {
+    if ('speechSynthesis' in window) speechSynthesis.cancel()
+    setSession(null)
+  }, [setSession])
 
   useEffect(() => {
     const l = langByCode(lang)
@@ -103,12 +116,13 @@ export function AppProvider({ children }) {
   const value = useMemo(
     () => ({
       profile, profiles: PROFILES, switchProfile,
+      session, login, logout,
       lang, setLang: setLangRaw, translating, trSource: tr.source,
       nudges, setNudges,
       cart, setCart, addToCart,
       t, tx,
     }),
-    [profile, switchProfile, lang, setLangRaw, translating, tr.source, nudges, setNudges, cart, setCart, addToCart, t, tx],
+    [profile, switchProfile, session, login, logout, lang, setLangRaw, translating, tr.source, nudges, setNudges, cart, setCart, addToCart, t, tx],
   )
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }

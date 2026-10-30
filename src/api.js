@@ -8,13 +8,19 @@ async function req(path, opts = {}) {
     headers: { 'Content-Type': 'application/json' },
     body: opts.body ? JSON.stringify(opts.body) : undefined,
   })
-  if (!res.ok) throw new Error(`${res.status} ${path}`)
+  if (!res.ok) {
+    const err = new Error(`${res.status} ${path}`)
+    err.code = (await res.json().catch(() => ({}))).error
+    throw err
+  }
   return res.json()
 }
 
 const qs = (o) => new URLSearchParams(Object.entries(o).filter(([, v]) => v !== undefined && v !== '' && v !== null)).toString()
 
 export const api = {
+  sendOtp: (phone, role) => req('/auth/send-otp', { method: 'POST', body: { phone, role } }),
+  verifyOtp: (phone, role, otp) => req('/auth/verify-otp', { method: 'POST', body: { phone, role, otp } }),
   profiles: () => req('/profiles'),
   products: (o) => req('/products?' + qs(o)),
   bundles: (o) => req('/bundles?' + qs(o)),

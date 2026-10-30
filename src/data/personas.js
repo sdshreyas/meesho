@@ -5,6 +5,7 @@
 export const BUYERS = [
   {
     id: 'U1',
+    phone: '9876543210',
     type: 'buyer',
     name: 'Priya Verma',
     segment: 'Budget Fashion Seeker',
@@ -27,6 +28,7 @@ export const BUYERS = [
   },
   {
     id: 'U2',
+    phone: '9876543211',
     type: 'buyer',
     name: 'Lakshmi Sundaram',
     segment: 'Value Homemaker',
@@ -49,6 +51,7 @@ export const BUYERS = [
   },
   {
     id: 'U3',
+    phone: '9876543212',
     type: 'buyer',
     name: 'Arjun Das',
     segment: 'Young Male Explorer',
@@ -71,6 +74,7 @@ export const BUYERS = [
   },
   {
     id: 'U4',
+    phone: '9876543213',
     type: 'buyer',
     name: 'Sunita Patel',
     segment: 'Home Reseller',
@@ -94,6 +98,7 @@ export const BUYERS = [
   },
   {
     id: 'U5',
+    phone: '9876543214',
     type: 'buyer',
     name: 'Anjali Kulkarni',
     segment: 'Festive Occasion Shopper',
@@ -119,6 +124,7 @@ export const BUYERS = [
 export const SELLERS = [
   {
     id: 'S1',
+    phone: '9123456780',
     type: 'seller',
     name: 'Kavya Fashions',
     owner: 'Kavya Sharma',
@@ -133,6 +139,7 @@ export const SELLERS = [
   },
   {
     id: 'S4',
+    phone: '9123456781',
     type: 'seller',
     name: 'Annapurna Home Store',
     owner: 'Ravi Kumar',
@@ -158,3 +165,6 @@ export const SELLER_LOCATIONS = {
 }
 
 export const PROFILES = [...BUYERS, ...SELLERS]
+
+// Every demo account logs in with this OTP
+export const DEMO_OTP = '123456'

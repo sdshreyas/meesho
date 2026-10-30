@@ -5,6 +5,7 @@ import { api } from '../api.js'
 import { inr, useApp } from '../store.jsx'
 import { useFetch } from '../useFetch.js'
 import { img } from '../components/ProductCard.jsx'
+import AudioSummary from '../components/AudioSummary.jsx'
 
 const STATUS_CLS = { s_reorder: 'red', s_healthy: 'green', s_overstock: 'amber' }
 
@@ -49,6 +50,53 @@ export default function Seller() {
       </div>
 
       <div className="festive-alert">🪔 {t('festiveAlert', { days: d.daysToFestival, pct: d.festivalUplift })}</div>
+
+      <h3 className="section-title">💼 {t('financeTitle')}</h3>
+      <div className="seller-grid fin-grid">
+        <div className="box fin">
+          <b>🏦 {t('creditTitle')}</b>
+          <small className="muted">{t('creditSub')}</small>
+          <div className="big-num">{inr(d.credit.limit)}</div>
+          <ul className="factors">
+            {d.credit.factors.map((f) => (
+              <li key={f.key} className={f.good ? 'good' : 'bad'}>{f.good ? '✓' : '!'} {t(f.key, f.vars)}</li>
+            ))}
+          </ul>
+          {[
+            { id: 'loan_wc', vars: { amount: d.credit.limit.toLocaleString('en-IN'), rate: d.credit.rate } },
+            { id: 'loan_inv', vars: { amount: d.credit.restockCost.toLocaleString('en-IN') } },
+          ].map((l) => (
+            <div key={l.id} className="fin-row">
+              <div>
+                <b>{t(l.id)}</b>
+                <small>{t(l.id + '_d', l.vars)}</small>
+              </div>
+              <button className={d.loans[l.id] ? 'btn-done' : 'btn-primary'} disabled={!!d.loans[l.id] || busy === l.id} onClick={() => apply(l.id)}>
+                {d.loans[l.id] ? t('applied') : t('apply')}
+              </button>
+            </div>
+          ))}
+        </div>
+
+        <div className="box fin">
+          <b>🛡 {t('insureTitle')}</b>
+          <small className="muted">{t('insureSub', { amount: d.insurance.stockValue.toLocaleString('en-IN') })}</small>
+          {d.insurance.plans.map((p) => (
+            <div key={p.id} className="fin-row">
+              <div>
+                <b>{t(p.id)}</b>
+                <small>{t(p.id + '_d')}</small>
+                <em>{t(p.unit, { amount: p.amount.toLocaleString('en-IN') })}</em>
+              </div>
+              <button className={d.enrolled[p.id] ? 'btn-done' : 'btn-outline'} disabled={busy === p.id} onClick={() => insure(p.id)}>
+                {d.enrolled[p.id] ? t('enrolled') : t('enrol')}
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <AudioSummary lines={d.summary} />
 
       <div className="kpis">
         <Kpi label={t('gmv30')} value={inr(k.gmv30)} />
@@ -139,49 +187,6 @@ export default function Seller() {
         </div>
       </div>
 
-      <div className="seller-grid">
-        <div className="box fin">
-          <b>🏦 {t('creditTitle')}</b>
-          <small className="muted">{t('creditSub')}</small>
-          <div className="big-num">{inr(d.credit.limit)}</div>
-          <ul className="factors">
-            {d.credit.factors.map((f) => (
-              <li key={f.key} className={f.good ? 'good' : 'bad'}>{f.good ? '✓' : '!'} {t(f.key, f.vars)}</li>
-            ))}
-          </ul>
-          {[
-            { id: 'loan_wc', vars: { amount: d.credit.limit.toLocaleString('en-IN'), rate: d.credit.rate } },
-            { id: 'loan_inv', vars: { amount: d.credit.restockCost.toLocaleString('en-IN') } },
-          ].map((l) => (
-            <div key={l.id} className="fin-row">
-              <div>
-                <b>{t(l.id)}</b>
-                <small>{t(l.id + '_d', l.vars)}</small>
-              </div>
-              <button className={d.loans[l.id] ? 'btn-done' : 'btn-primary'} disabled={!!d.loans[l.id] || busy === l.id} onClick={() => apply(l.id)}>
-                {d.loans[l.id] ? t('applied') : t('apply')}
-              </button>
-            </div>
-          ))}
-        </div>
-
-        <div className="box fin">
-          <b>🛡 {t('insureTitle')}</b>
-          <small className="muted">{t('insureSub', { amount: d.insurance.stockValue.toLocaleString('en-IN') })}</small>
-          {d.insurance.plans.map((p) => (
-            <div key={p.id} className="fin-row">
-              <div>
-                <b>{t(p.id)}</b>
-                <small>{t(p.id + '_d')}</small>
-                <em>{t(p.unit, { amount: p.amount.toLocaleString('en-IN') })}</em>
-              </div>
-              <button className={d.enrolled[p.id] ? 'btn-done' : 'btn-outline'} disabled={busy === p.id} onClick={() => insure(p.id)}>
-                {d.enrolled[p.id] ? t('enrolled') : t('enrol')}
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
     </main>
   )
 }

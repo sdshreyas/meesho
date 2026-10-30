@@ -5,19 +5,13 @@ import { LANGUAGES } from '../data/languages.js'
 import { CATEGORY_KEYS } from '../i18n/strings.js'
 
 export default function Header() {
-  const { profile, profiles, switchProfile, lang, setLang, translating, trSource, nudges, setNudges, cart, t, tx } = useApp()
+  const { profile, logout, lang, setLang, translating, trSource, nudges, setNudges, cart, t, tx } = useApp()
   const navigate = useNavigate()
   const [params] = useSearchParams()
   const [q, setQ] = useState(params.get('q') ?? '')
   useEffect(() => setQ(params.get('q') ?? ''), [params])
   const isSeller = profile.type === 'seller'
   const count = cart.reduce((s, l) => s + l.qty, 0)
-
-  const onProfile = (id) => {
-    switchProfile(id)
-    const p = profiles.find((x) => x.id === id)
-    navigate(p.type === 'seller' ? '/seller' : '/')
-  }
 
   return (
     <header className="header">
@@ -40,21 +34,14 @@ export default function Header() {
         {isSeller && <div className="seller-badge">{t('sellerHub')}</div>}
 
         <div className="header-controls">
-          <label className="ctl">
-            <span>{t('viewingAs')}</span>
-            <select value={profile.id} onChange={(e) => onProfile(e.target.value)}>
-              <optgroup label={t('buyers')}>
-                {profiles.filter((p) => p.type === 'buyer').map((p) => (
-                  <option key={p.id} value={p.id}>{p.name} · {p.segment}</option>
-                ))}
-              </optgroup>
-              <optgroup label={t('sellers')}>
-                {profiles.filter((p) => p.type === 'seller').map((p) => (
-                  <option key={p.id} value={p.id}>{p.name} · {p.city}</option>
-                ))}
-              </optgroup>
-            </select>
-          </label>
+          <div className="account">
+            <span className="avatar sm">{profile.name.split(' ').map((w) => w[0]).join('')}</span>
+            <span className="account-info">
+              <b>{isSeller ? profile.owner : profile.name}</b>
+              <small>{isSeller ? profile.name : tx(profile.segment)}</small>
+            </span>
+            <button className="logout" onClick={logout} title={t('logout')}>⎋ {t('logout')}</button>
+          </div>
           <label className="ctl">
             <span>
               {t('language')}

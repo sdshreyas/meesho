@@ -119,3 +119,45 @@ export function sellerDashboard(seller, products) {
     },
   }
 }
+
+const lakh = (n) => (n >= 100000 ? `₹${(n / 100000).toFixed(2)} lakh` : `₹${Math.round(n).toLocaleString('en-IN')}`)
+
+/**
+ * Plain-English script for the seller's audio briefing: performance first,
+ * then the most valuable improvements, then finance offers. Translated and
+ * spoken in the browser.
+ */
+export function audioSummary(d, enrolled = {}) {
+  const k = d.kpis
+  const first = d.seller.owner.split(' ')[0]
+  const prev = sum(d.weekly.slice(0, 4).map((w) => w.actual ?? 0))
+  const curr = sum(d.weekly.slice(4, 8).map((w) => w.actual ?? 0))
+  const growth = Math.round(((curr - prev) / Math.max(1, prev)) * 100)
+  const best = [...d.skus].sort((a, b) => sum(b.weeklySales.slice(-4)) * b.price - sum(a.weeklySales.slice(-4)) * a.price)[0]
+  const low = d.skus.filter((s) => s.status === 's_reorder').sort((a, b) => a.daysCover - b.daysCover)
+  const worst = d.returnAlerts[0]
+  const lines = [
+    `Namaste ${first}. Here is your business summary for ${d.seller.name}.`,
+    `In the last 30 days you received ${k.orders30.toLocaleString('en-IN')} orders worth ${lakh(k.gmv30)}.`,
+    growth >= 0
+      ? `Your sales grew ${growth} percent compared with the previous month.`
+      : `Your sales fell ${Math.abs(growth)} percent compared with the previous month.`,
+    `Your best selling product is ${best.name}.`,
+    `${FESTIVAL.name} is in ${d.daysToFestival} days, so festive products may sell ${d.festivalUplift} percent more.`,
+  ]
+  if (low.length) {
+    lines.push(`${low.length} products will run out within two weeks. Add stock first for ${low.slice(0, 2).map((s) => s.name).join(' and ')}.`)
+  }
+  if (worst) {
+    lines.push(`Your average return rate is ${k.avgReturn} percent. ${worst.name} has the highest returns at ${worst.returnRate} percent, mostly because of ${worst.reason.toLowerCase()}.`)
+    lines.push(`To fix this, ${worst.tip.charAt(0).toLowerCase() + worst.tip.slice(1)}.${worst.projectedFee ? ` This can save you a return fee of ${lakh(worst.projectedFee)}.` : ''}`)
+  }
+  lines.push(`You are pre-approved for a working capital loan of ${lakh(d.credit.limit)} at ${d.credit.rate} percent interest, and ${lakh(d.credit.restockCost)} to fund your ${FESTIVAL.name} stock.`)
+  lines.push(
+    enrolled.ins_stock
+      ? 'Your stock is insured with Stock Shield.'
+      : `You can insure your stock worth ${lakh(d.insurance.stockValue)} for just ${lakh(d.insurance.plans[0].amount)} a year.`,
+  )
+  lines.push(`Your quality score is ${k.qualityScore} out of 100. Keep it above 80 to rank higher in buyer feeds.`)
+  return lines
+}

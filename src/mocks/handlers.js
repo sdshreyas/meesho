@@ -5,13 +5,33 @@ import { db } from './db.js'
 import { recommend, buildBundle, bundlesForPersona, frequentlyBought, similar } from '../engine/recommend.js'
 import { quote } from '../engine/pricing.js'
 import { trackingSnapshot } from '../engine/logistics.js'
-import { sellerDashboard } from '../engine/seller.js'
+import { audioSummary, sellerDashboard } from '../engine/seller.js'
+import { DEMO_OTP } from '../data/personas.js'
 
 const latency = () => delay(120 + Math.random() * 180)
 const flag = (url, name) => url.searchParams.get(name) !== '0'
 const notFound = (msg) => HttpResponse.json({ error: msg }, { status: 404 })
 
 export const handlers = [
+  // Login step 1: phone number -> OTP "sent" (demo: the OTP is returned for display)
+  http.post('*/api/auth/send-otp', async ({ request }) => {
+    await latency()
+    const { phone, role } = await request.json()
+    const profile = db.profiles.find((p) => p.phone === phone && p.type === role)
+    if (!profile) return HttpResponse.json({ error: 'not_registered' }, { status: 404 })
+    return HttpResponse.json({ sent: true, demoOtp: DEMO_OTP, expiresIn: 30 })
+  }),
+
+  // Login step 2: verify OTP -> session token
+  http.post('*/api/auth/verify-otp', async ({ request }) => {
+    await latency()
+    const { phone, role, otp } = await request.json()
+    const profile = db.profiles.find((p) => p.phone === phone && p.type === role)
+    if (!profile) return HttpResponse.json({ error: 'not_registered' }, { status: 404 })
+    if (otp !== DEMO_OTP) return HttpResponse.json({ error: 'wrong_otp' }, { status: 401 })
+    return HttpResponse.json({ token: 'demo-' + profile.id + '-' + Date.now(), profileId: profile.id })
+  }),
+
   http.get('*/api/profiles', async () => {
     await latency()
     return HttpResponse.json(db.profiles)
@@ -115,11 +135,9 @@ export const handlers = [
     await latency()
     const seller = db.profile(params.id)
     if (!seller || seller.type !== 'seller') return notFound('seller')
-    return HttpResponse.json({
-      ...sellerDashboard(seller, db.products),
-      enrolled: db.insurance(seller.id),
-      loans: db.loans(seller.id),
-    })
+    const dash = sellerDashboard(seller, db.products)
+    const enrolled = db.insurance(seller.id)
+    return HttpResponse.json({ ...dash, enrolled, loans: db.loans(seller.id), summary: audioSummary(dash, enrolled) })
   }),
 
   http.post('*/api/sellers/:id/insurance', async ({ params, request }) => {
