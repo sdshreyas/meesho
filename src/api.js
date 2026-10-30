@@ -32,4 +32,12 @@ export const api = {
   sellerDashboard: (id) => req(`/sellers/${id}/dashboard`),
   setInsurance: (id, plan, enrolled) => req(`/sellers/${id}/insurance`, { method: 'POST', body: { plan, enrolled } }),
   applyLoan: (id, loan) => req(`/sellers/${id}/loans`, { method: 'POST', body: { loan } }),
+  logistics: {
+    network: () => req('/logistics/network'),
+    forecast: (product) => req('/logistics/forecast?' + qs({ product })),
+    quote: (body) => req('/logistics/quote', { method: 'POST', body }),
+    optimize: (body = {}) => req('/logistics/optimize', { method: 'POST', body }),
+    simulate: (body) => req('/logistics/simulate', { method: 'POST', body }),
+    suggest: (body = {}) => req('/logistics/suggest', { method: 'POST', body }),
+  },
 }

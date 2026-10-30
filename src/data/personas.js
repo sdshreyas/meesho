@@ -164,7 +164,23 @@ export const SELLER_LOCATIONS = {
   S6: { name: 'FitIndia Gear', city: 'Meerut', lat: 28.9845, lng: 77.7064 },
 }
 
-export const PROFILES = [...BUYERS, ...SELLERS]
+// Valmo logistics leadership — opens the Control Tower
+export const OPS = [
+  {
+    id: 'O1',
+    phone: '9000000001',
+    type: 'ops',
+    name: 'Valmo Control Tower',
+    owner: 'Ritu Menon',
+    segment: 'Logistics Ops · Leadership',
+    city: 'Bengaluru', state: 'Karnataka',
+    lat: 12.9716, lng: 77.5946,
+    language: 'en',
+    blurb: 'Network planning, routing and cost for Valmo.',
+  },
+]
+
+export const PROFILES = [...BUYERS, ...SELLERS, ...OPS]
 
 // Every demo account logs in with this OTP
 export const DEMO_OTP = '123456'

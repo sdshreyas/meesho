@@ -86,7 +86,7 @@ export default function Login() {
     try {
       const r = await api.verifyOtp(phone, role, code)
       login(r.profileId, r.token)
-      navigate(role === 'seller' ? '/seller' : '/', { replace: true })
+      navigate(role === 'seller' ? '/seller' : role === 'ops' ? '/ops' : '/', { replace: true })
     } catch (err) {
       setError(err.code === 'wrong_otp' ? t('wrongOtp') : err.message)
       setOtp('')
@@ -95,7 +95,11 @@ export default function Login() {
   }
 
   const demo = profiles.filter((p) => p.type === role)
-  const pitch = role === 'buyer' ? ['buyerPitch1', 'buyerPitch2', 'buyerPitch3'] : ['sellerPitch1', 'sellerPitch2', 'sellerPitch3']
+  const pitch = {
+    buyer: ['buyerPitch1', 'buyerPitch2', 'buyerPitch3'],
+    seller: ['sellerPitch1', 'sellerPitch2', 'sellerPitch3'],
+    ops: ['opsPitch1', 'opsPitch2', 'opsPitch3'],
+  }[role]
 
   return (
     <div className="login-page">
@@ -109,11 +113,11 @@ export default function Login() {
 
       <section className={'login-brand ' + role}>
         <div className="logo light">meesho</div>
-        <h1>{t(role === 'buyer' ? 'loginBuyer' : 'loginSeller')}</h1>
+        <h1>{t({ buyer: 'loginBuyer', seller: 'loginSeller', ops: 'loginOps' }[role])}</h1>
         <ul>
           {pitch.map((k) => <li key={k}>✓ {t(k)}</li>)}
         </ul>
-        <div className="brand-art" aria-hidden>{role === 'buyer' ? '🛍️👗👟💄' : '🏪📦📈🏦'}</div>
+        <div className="brand-art" aria-hidden>{{ buyer: '🛍️👗👟💄', seller: '🏪📦📈🏦', ops: '🚚🗺️📊🏭' }[role]}</div>
       </section>
 
       <section className="login-card">
@@ -125,6 +129,7 @@ export default function Login() {
         <div className="role-tabs">
           <button className={role === 'buyer' ? 'sel' : ''} onClick={() => switchRole('buyer')}>🛍️ {t('loginBuyer')}</button>
           <button className={role === 'seller' ? 'sel' : ''} onClick={() => switchRole('seller')}>🏪 {t('loginSeller')}</button>
+          <button className={role === 'ops' ? 'sel' : ''} onClick={() => switchRole('ops')}>🚚 {t('loginOps')}</button>
         </div>
         <h2>{t('loginHeading')}</h2>
 

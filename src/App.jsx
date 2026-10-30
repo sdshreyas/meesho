@@ -8,16 +8,19 @@ import Orders from './pages/Orders.jsx'
 import Track from './pages/Track.jsx'
 import Seller from './pages/Seller.jsx'
 import Login from './pages/Login.jsx'
+import Ops from './pages/Ops.jsx'
 
 function Shell() {
   const { profile, session, t } = useApp()
   const seller = profile.type === 'seller'
+  const ops = profile.type === 'ops'
   if (!session) return <Login />
   return (
     <>
       <Header />
       <Routes key={profile.id}>
-        <Route path="/" element={seller ? <Navigate to="/seller" replace /> : <Home />} />
+        <Route path="/" element={ops ? <Navigate to="/ops" replace /> : seller ? <Navigate to="/seller" replace /> : <Home />} />
+        <Route path="/ops" element={ops ? <Ops /> : <Navigate to="/" replace />} />
         <Route path="/product/:id" element={<Product />} />
         <Route path="/cart" element={<Cart />} />
         <Route path="/orders" element={<Orders />} />

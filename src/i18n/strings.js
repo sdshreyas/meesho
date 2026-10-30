@@ -205,6 +205,10 @@ export const EN = {
   sellerPitch2: 'Pre-approved credit & insurance',
   sellerPitch3: 'Stock and returns insights',
   logout: 'Logout',
+  loginOps: 'Valmo Ops',
+  opsPitch1: 'See every DC, seller and demand hotspot',
+  opsPitch2: 'Route orders at the lowest cost',
+  opsPitch3: 'Test new distribution centres before you build',
   prototypeNote:'Case-competition prototype · demo data only · not affiliated with Meesho',
 }
 

@@ -20,6 +20,16 @@ Live: https://sdshreyas.github.io/meesho/
 | Fake database: 100 products, personas, sellers | `src/data/` |
 | 23 languages via free translation APIs + offline fallback | `src/i18n/` |
 
+## Valmo Control Tower (log in as Valmo Ops · 90000 00001 · OTP 123456)
+
+| Feature | Where |
+| --- | --- |
+| Fake logistics world: 93 cities, 18 Valmo DCs, 3 external partners, 154 sellers, 6 months of orders (1 record = 3,000 orders) | `src/logistics/data.js` |
+| Cost model (first mile, sorting, line haul, last mile, COD) and daily optimiser inside fleet capacity | `src/logistics/optimizer.js` |
+| Demand forecast per product x city (8-week weighted average + trend + festive uplift, smoothed city split) | `src/logistics/forecast.js` |
+| API: network, forecast, quote, optimize, simulate, suggest | `src/mocks/logisticsHandlers.js` |
+| Screens: network & demand map, optimiser, new-DC simulator | `src/pages/Ops.jsx`, `src/components/ops/` |
+
 ## API (served in-browser by MSW)
 
 ```

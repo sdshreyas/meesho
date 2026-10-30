@@ -11,15 +11,17 @@ export default function Header() {
   const [q, setQ] = useState(params.get('q') ?? '')
   useEffect(() => setQ(params.get('q') ?? ''), [params])
   const isSeller = profile.type === 'seller'
+  const isOps = profile.type === 'ops'
+  const isBuyer = profile.type === 'buyer'
   const count = cart.reduce((s, l) => s + l.qty, 0)
 
   return (
     <header className="header">
       <div className="header-row">
-        <Link to={isSeller ? '/seller' : '/'} className="logo" aria-label="meesho home">
+        <Link to={isOps ? '/ops' : isSeller ? '/seller' : '/'} className="logo" aria-label="meesho home">
           meesho
         </Link>
-        {!isSeller && (
+        {isBuyer && (
           <form
             className="search"
             onSubmit={(e) => {
@@ -32,12 +34,13 @@ export default function Header() {
           </form>
         )}
         {isSeller && <div className="seller-badge">{t('sellerHub')}</div>}
+        {isOps && <div className="seller-badge ops">🚚 Valmo Control Tower</div>}
 
         <div className="header-controls">
           <div className="account">
             <span className="avatar sm">{profile.name.split(' ').map((w) => w[0]).join('')}</span>
             <span className="account-info">
-              <b>{isSeller ? profile.owner : profile.name}</b>
+              <b>{isSeller || isOps ? profile.owner : profile.name}</b>
               <small>{isSeller ? profile.name : tx(profile.segment)}</small>
             </span>
             <button className="logout" onClick={logout} title={t('logout')}>⎋ {t('logout')}</button>
@@ -53,7 +56,7 @@ export default function Header() {
               ))}
             </select>
           </label>
-          {!isSeller && (
+          {isBuyer && (
             <button
               className={'nudge-toggle' + (nudges ? ' on' : '')}
               onClick={() => setNudges(!nudges)}
@@ -62,7 +65,7 @@ export default function Header() {
               <span className="dot" /> {t('aiNudges')} {nudges ? t('on') : t('off')}
             </button>
           )}
-          {!isSeller && (
+          {isBuyer && (
             <>
               <NavLink to="/orders" className="icon-link">
                 <span aria-hidden>📦</span>
@@ -77,7 +80,7 @@ export default function Header() {
           )}
         </div>
       </div>
-      {!isSeller && (
+      {isBuyer && (
         <nav className="cat-nav">
           <NavLink to="/" end className={() => (!params.get('cat') ? 'active' : '')}>{t('allCategories')}</NavLink>
           {CATEGORY_KEYS.map((c) => (
