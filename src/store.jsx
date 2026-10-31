@@ -4,6 +4,7 @@ import products from './data/products.json'
 import { langByCode } from './data/languages.js'
 import { CATEGORY_KEYS, EN, SELLER_TEXTS } from './i18n/strings.js'
 import { fill, translateAll } from './i18n/translate.js'
+import { endSession, startSession, track } from './tracking/tracker.js'
 
 const Ctx = createContext(null)
 const EMPTY_MAP = {}
@@ -73,24 +74,33 @@ export function AppProvider({ children }) {
 
   const wishlist = wishlists[profile.id] ?? EMPTY_CART
   const toggleWish = useCallback(
-    (id) => setWishlists((all) => {
-      const cur = all[profile.id] ?? []
-      return { ...all, [profile.id]: cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id] }
-    }),
-    [profile.id, setWishlists],
+    (id) => {
+      track('wishlist', { productId: id, on: !wishlist.includes(id) })
+      setWishlists((all) => {
+        const cur = all[profile.id] ?? []
+        return { ...all, [profile.id]: cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id] }
+      })
+    },
+    [profile.id, setWishlists, wishlist],
   )
 
   const login = useCallback(
     (profileId, token) => {
       switchProfile(profileId)
+      startSession(profileId, { fresh: true })
       setSession({ profileId, token, at: Date.now() })
     },
     [switchProfile, setSession],
   )
   const logout = useCallback(() => {
     if ('speechSynthesis' in window) speechSynthesis.cancel()
+    endSession('logout')
     setSession(null)
   }, [setSession])
+  // reopening the app while signed in continues (or starts) a tracked session
+  useEffect(() => {
+    if (session?.profileId) startSession(session.profileId)
+  }, [session?.profileId])
 
   useEffect(() => {
     const l = langByCode(lang)
@@ -125,12 +135,15 @@ export function AppProvider({ children }) {
     [profile.id, setCarts],
   )
   const addToCart = useCallback(
-    (productId, qty = 1, bundleId) =>
+    (productId, qty = 1, bundleId) => {
+      const p = products.find((x) => x.id === productId)
+      track('add_to_cart', { productId, qty, bundleId: bundleId ?? null, price: p?.price, category: p?.category })
       setCart((c) => {
         const i = c.findIndex((l) => l.productId === productId && (l.bundleId ?? null) === (bundleId ?? null))
         if (i >= 0) return c.map((l, j) => (j === i ? { ...l, qty: l.qty + qty } : l))
         return [...c, { productId, qty, ...(bundleId ? { bundleId } : {}) }]
-      }),
+      })
+    },
     [setCart],
   )
 

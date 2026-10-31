@@ -32,6 +32,13 @@ export const api = {
   sellerDashboard: (id) => req(`/sellers/${id}/dashboard`),
   setInsurance: (id, plan, enrolled) => req(`/sellers/${id}/insurance`, { method: 'POST', body: { plan, enrolled } }),
   applyLoan: (id, loan) => req(`/sellers/${id}/loans`, { method: 'POST', body: { loan } }),
+  returnOrder: (id, reason) => req(`/orders/${id}/return`, { method: 'POST', body: { reason } }),
+  users: {
+    personalise: (id, apiKey) => req(`/users/${id}/personalise`, { method: 'POST', body: { apiKey } }),
+    preferences: (id) => req(`/users/${id}/preferences`),
+    data: (id) => req(`/users/${id}/data`),
+    reset: (id) => req(`/users/${id}/reset`, { method: 'POST', body: {} }),
+  },
   logistics: {
     network: () => req('/logistics/network'),
     forecast: (product) => req('/logistics/forecast?' + qs({ product })),

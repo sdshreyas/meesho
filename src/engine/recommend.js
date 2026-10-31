@@ -53,6 +53,19 @@ export function scoreProduct(p, persona, ctx = {}, byId = {}) {
     add('r_cart', 2)
   }
 
+  // learned preferences (from the personalisation step)
+  const boost = persona.subBoost?.[p.subcategory] ?? 0
+  if (boost) {
+    score += boost * 1.6
+    if (boost > 0.25) add('r_pref', 1.2 + boost)
+  }
+  if (persona.avoid?.subcategories?.includes(p.subcategory)) score -= 2
+  if (persona.avoid?.productIds?.includes(p.id)) score -= 4
+  if (persona.reengage?.includes(p.id)) {
+    score += 1.2
+    add('r_reengage', 2.2)
+  }
+
   // AOV nudge: items that close the gap to the next threshold rank higher
   if (ctx.gap > 0 && p.price >= ctx.gap && p.price <= ctx.gap + 200) {
     score += 1.5
@@ -118,8 +131,9 @@ export function buildBundle(product, products, persona, avoid = []) {
   if (picks.length < 2) return null
   const items = [product, ...picks]
   const total = items.reduce((s, p) => s + p.price, 0)
-  const price = Math.round(total * (1 - BUNDLE_DISCOUNT_PCT / 100))
-  return { id: 'B-' + items.map((p) => p.id).join('-'), items, total, price, savings: total - price }
+  const pct = persona?.bundlePct ?? BUNDLE_DISCOUNT_PCT
+  const price = Math.round(total * (1 - pct / 100))
+  return { id: 'B-' + items.map((p) => p.id).join('-'), items, total, price, savings: total - price, pct }
 }
 
 /** Bundles for the home feed: anchored on the persona's top-ranked products. */
@@ -127,7 +141,9 @@ export function bundlesForPersona(products, persona, n = 3) {
   const out = []
   const usedSubs = new Set()
   const usedIds = new Set()
-  for (const p of recommend(products, persona)) {
+  const focus = persona.bundleFocus ?? []
+  const anchors = recommend(products, persona).sort((a, b) => (focus.includes(b.subcategory) ? 1 : 0) - (focus.includes(a.subcategory) ? 1 : 0))
+  for (const p of anchors) {
     if (usedSubs.has(p.subcategory) || usedIds.has(p.id)) continue
     const b = buildBundle(p, products, persona, [...usedIds])
     if (b) {

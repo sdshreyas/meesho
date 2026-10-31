@@ -5,6 +5,7 @@ import { inr, useApp } from '../store.jsx'
 import { useFetch } from '../useFetch.js'
 import products from '../data/products.json'
 import ProductCard, { img } from '../components/ProductCard.jsx'
+import { track } from '../tracking/tracker.js'
 
 const byId = Object.fromEntries(products.map((p) => [p.id, p]))
 const NUDGE_ICON = { nudge_delivery: '🚚', nudge_cod: '💵', nudge_tier1: '🏷️', nudge_bnpl: '💳' }
@@ -62,7 +63,11 @@ export default function Cart() {
     [key, profile.id, payment, nudges],
   )
 
-  const setQty = (i, qty) => setCart((c) => (qty <= 0 ? c.filter((_, j) => j !== i) : c.map((l, j) => (j === i ? { ...l, qty } : l))))
+  const setQty = (i, qty) => {
+    const line = cart[i]
+    if (line) track(qty <= 0 ? 'remove_from_cart' : qty > line.qty ? 'add_to_cart' : 'cart_qty_down', { productId: line.productId, qty: Math.abs(qty - line.qty), price: byId[line.productId]?.price, category: byId[line.productId]?.category })
+    setCart((c) => (qty <= 0 ? c.filter((_, j) => j !== i) : c.map((l, j) => (j === i ? { ...l, qty } : l))))
+  }
 
   if (!cart.length) {
     return (
@@ -78,6 +83,11 @@ export default function Cart() {
   const place = async () => {
     setPlacing(true)
     const order = await api.placeOrder({ lines: cart, personaId: profile.id, payment, plan: payment === 'BNPL' ? plan : null, nudges })
+    track('purchase', {
+      orderId: order.id, total: order.total, payment, plan: payment === 'BNPL' ? plan : null,
+      items: cart.map((l) => ({ productId: l.productId, qty: l.qty, bundleId: l.bundleId ?? null, price: byId[l.productId]?.price })),
+      personalDiscount: q?.personalDiscount ?? 0, offerCode: q?.offer?.code ?? null,
+    })
     setCart([])
     navigate(`/track/${order.id}?new=1`)
   }
@@ -146,6 +156,7 @@ export default function Cart() {
             {q.bundleDiscount > 0 && <div className="pd green"><span>{t('bundleDiscount')}</span><span>−{inr(q.bundleDiscount)}</span></div>}
             {q.packDiscount > 0 && <div className="pd green"><span>{t('packDiscount')}</span><span>−{inr(q.packDiscount)}</span></div>}
             {q.multiItemDiscount > 0 && <div className="pd green"><span>{t('multiItemDiscount')} ({q.tierPct}%)</span><span>−{inr(q.multiItemDiscount)}</span></div>}
+            {q.personalDiscount > 0 && <div className="pd green"><span>🎁 {t('personalOffer')} {q.offer.code} ({q.offer.pct}%)</span><span>−{inr(q.personalDiscount)}</span></div>}
             <div className="pd"><span>{t('deliveryFee')}</span><span>{q.deliveryFee ? inr(q.deliveryFee) : <em className="green">FREE</em>}</span></div>
             {q.codFee > 0 && <div className="pd"><span>{t('codFee')}</span><span>{inr(q.codFee)}</span></div>}
             <div className="pd total"><span>{t('orderTotal')}</span><span>{inr(q.total)}</span></div>

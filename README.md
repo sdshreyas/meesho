@@ -35,6 +35,17 @@ Modelled on Valmo's 5-stage flow: **first mile** (Valmo Pilots → Airhub, Capta
 
 Calibration (public analyst estimates): Meesho's blended logistics cost ≈ ₹46 per order in FY25, Valmo in the low ₹40s, 3PLs ₹48–51; COD return rates 25–30% industry-wide; first-attempt delivery success ~60–73% in tier 2/3. Rider payouts per parcel aren't published, so the pilot payout (₹650/day ÷ drops) is an assumption, editable in `COST`.
 
+## Per-user behaviour tracking & Gemini personalisation
+
+Every login profile has **two databases** (`src/mocks/userdb.js`, stored in the browser):
+
+1. **Behaviour history** — one record per session with every event. Tracked: product view frequency, category view frequency, session duration, scroll depth, first & exit page, search → product journeys, repeat product views, cart additions/removals, purchases, cart abandonment, returns, wishlist (`src/tracking/tracker.js`, summarised in `src/tracking/analytics.js`).
+2. **Preferences** — what the store shows this user: category weights, subcategory boosts, price band, styles, personal discount (≤15%), bundle discount (8–20%), re-engage products, things to avoid, home-section order and greeting. Every past version is kept.
+
+**On buyer sign-in** (before the store loads) the history is summarised and sent with the current preferences to **Gemini** (`src/personalise/personalise.js`). The reply is validated against business guardrails, saved as a new preference version, and the store loads with it. Without a key — or if Gemini fails — a transparent rule-based updater is used. The key is entered on the login page and remembered in this browser only.
+
+Preferences drive the feed ranking, bundles, personal offers in the cart and the home layout (`src/personalise/applyPrefs.js`). **📊 My data** shows both databases and exports a 14-sheet Excel workbook per user; Valmo Ops can view and export every buyer.
+
 ## API (served in-browser by MSW)
 
 ```
@@ -49,6 +60,11 @@ GET  /api/orders/:id/tracking
 GET  /api/sellers/:id/dashboard
 POST /api/sellers/:id/insurance   { plan, enrolled }
 POST /api/sellers/:id/loans       { loan }
+POST /api/orders/:id/return       { reason }
+POST /api/users/:id/personalise   { apiKey }   → Gemini / rules → new preference version
+GET  /api/users/:id/preferences
+GET  /api/users/:id/data          (history + preferences + runs + orders)
+POST /api/users/:id/reset
 ```
 
 ## Demo script

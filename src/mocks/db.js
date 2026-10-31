@@ -38,6 +38,14 @@ export const db = {
     return order
   },
 
+  returnOrder(id, reason) {
+    const o = state.orders.find((x) => x.id === id)
+    if (!o || o.returned) return o
+    o.returned = { at: Date.now(), reason }
+    save()
+    return o
+  },
+
   insurance: (sellerId) => state.insurance[sellerId] ?? {},
   setInsurance(sellerId, plan, on) {
     state.insurance[sellerId] = { ...this.insurance(sellerId), [plan]: on }

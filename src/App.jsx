@@ -1,4 +1,7 @@
-import { HashRouter, Link, Navigate, Route, Routes } from 'react-router-dom'
+import { useEffect } from 'react'
+import { HashRouter, Link, Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { pageView } from './tracking/tracker.js'
+import MyData from './pages/MyData.jsx'
 import { AppProvider, useApp } from './store.jsx'
 import Header from './components/Header.jsx'
 import Home from './pages/Home.jsx'
@@ -13,6 +16,10 @@ import Credits from './pages/Credits.jsx'
 
 function Shell() {
   const { profile, session, t } = useApp()
+  const location = useLocation()
+  useEffect(() => {
+    if (session) pageView(location.pathname + location.search)
+  }, [session, location.pathname, location.search])
   const seller = profile.type === 'seller'
   const ops = profile.type === 'ops'
   if (!session) return <Login />
@@ -28,6 +35,7 @@ function Shell() {
         <Route path="/track/:id" element={<Track />} />
         <Route path="/seller" element={<Seller />} />
         <Route path="/credits" element={<Credits />} />
+        <Route path="/my-data" element={<MyData />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <footer className="footer">{t('prototypeNote')} <Link to="/credits">{t('credits')}</Link></footer>

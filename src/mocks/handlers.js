@@ -7,6 +7,14 @@ import { quote } from '../engine/pricing.js'
 import { trackingSnapshot } from '../engine/logistics.js'
 import { audioSummary, sellerDashboard } from '../engine/seller.js'
 import { DEMO_OTP } from '../data/personas.js'
+import { userdb } from './userdb.js'
+import { applyPrefs } from '../personalise/applyPrefs.js'
+
+// buyer profile merged with their live preferences
+const shopper = (id) => {
+  const p = db.profile(id)
+  return p?.type === 'buyer' ? applyPrefs(p, userdb.prefs(p.id)) : p
+}
 
 const latency = () => delay(120 + Math.random() * 180)
 const flag = (url, name) => url.searchParams.get(name) !== '0'
@@ -41,7 +49,7 @@ export const handlers = [
   http.get('*/api/products', async ({ request }) => {
     await latency()
     const url = new URL(request.url)
-    const persona = db.profile(url.searchParams.get('persona'))
+    const persona = shopper(url.searchParams.get('persona'))
     const category = url.searchParams.get('category')
     const q = url.searchParams.get('q')?.toLowerCase()
     const nudges = flag(url, 'nudges')
@@ -54,7 +62,7 @@ export const handlers = [
   http.get('*/api/bundles', async ({ request }) => {
     await latency()
     const url = new URL(request.url)
-    const persona = db.profile(url.searchParams.get('persona'))
+    const persona = shopper(url.searchParams.get('persona'))
     if (!persona || !flag(url, 'nudges')) return HttpResponse.json([])
     return HttpResponse.json(bundlesForPersona(db.products, persona))
   }),
@@ -64,7 +72,7 @@ export const handlers = [
     const url = new URL(request.url)
     const product = db.product(params.id)
     if (!product) return notFound('product')
-    const persona = db.profile(url.searchParams.get('persona'))
+    const persona = shopper(url.searchParams.get('persona'))
     const nudges = flag(url, 'nudges')
     const seller = db.sellerLocations[product.sellerId]
     if (!persona || persona.type !== 'buyer') return HttpResponse.json({ product, seller, similar: similar(product, db.products, db.profiles[0]) })
@@ -81,7 +89,7 @@ export const handlers = [
   http.post('*/api/cart/quote', async ({ request }) => {
     await latency()
     const { lines = [], personaId, payment = 'COD', nudges = true } = await request.json()
-    const persona = db.profile(personaId)
+    const persona = shopper(personaId)
     const q = quote(lines, db.products, persona, { nudges, payment })
     const inCart = lines.map((l) => l.productId)
     const cartSubs = inCart.map((id) => db.product(id)?.subcategory)
@@ -94,7 +102,7 @@ export const handlers = [
   http.post('*/api/orders', async ({ request }) => {
     await latency()
     const { lines = [], personaId, payment, plan, nudges = true } = await request.json()
-    const persona = db.profile(personaId)
+    const persona = shopper(personaId)
     if (!persona || !lines.length) return HttpResponse.json({ error: 'invalid order' }, { status: 400 })
     const q = quote(lines, db.products, persona, { nudges, payment })
     // ships from the seller of the highest-value line
@@ -115,6 +123,14 @@ export const handlers = [
       to: { city: persona.city, lat: persona.lat, lng: persona.lng, name: persona.name },
     })
     return HttpResponse.json(order, { status: 201 })
+  }),
+
+  http.post('*/api/orders/:id/return', async ({ params, request }) => {
+    await latency()
+    const { reason = 'Changed my mind' } = await request.json().catch(() => ({}))
+    const o = db.returnOrder(params.id, reason)
+    if (!o) return notFound('order')
+    return HttpResponse.json(o)
   }),
 
   http.get('*/api/orders', async ({ request }) => {

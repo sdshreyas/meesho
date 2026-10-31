@@ -26,7 +26,7 @@ export function quote(lines, products, persona, { nudges = true, payment = 'COD'
   if (nudges) {
     for (const l of items) {
       if (l.bundleId) {
-        l.discount = pct(l.lineTotal, BUNDLE_DISCOUNT_PCT)
+        l.discount = pct(l.lineTotal, persona?.bundlePct ?? BUNDLE_DISCOUNT_PCT)
         bundleDiscount += l.discount
       } else {
         const pack = PACK_DISCOUNTS.find((d) => l.qty >= d.qty)
@@ -46,7 +46,16 @@ export function quote(lines, products, persona, { nudges = true, payment = 'COD'
     }
   }
 
-  const afterDiscounts = productTotal - bundleDiscount - packDiscount - multiItemDiscount
+  // personal offer from the shopper's preferences (capped at 15% by the personalisation guardrails)
+  let personalDiscount = 0
+  const offer = persona?.offer
+  if (offer?.pct && items.length) {
+    const eligible = items.filter((l) => !offer.categories?.length || offer.categories.includes(l.product.category))
+    const base = eligible.reduce((s, l) => s + l.lineTotal - (l.discount ?? 0), 0) * (1 - (tierPct || 0) / 100)
+    personalDiscount = pct(base, Math.min(15, offer.pct))
+  }
+
+  const afterDiscounts = productTotal - bundleDiscount - packDiscount - multiItemDiscount - personalDiscount
   const deliveryFee = items.length && afterDiscounts < FREE_DELIVERY_THRESHOLD ? DELIVERY_FEE : 0
   const codFee = payment === 'COD' && items.length && afterDiscounts < COD_FREE_ABOVE ? COD_FEE : 0
   const total = afterDiscounts + deliveryFee + codFee
@@ -76,6 +85,7 @@ export function quote(lines, products, persona, { nudges = true, payment = 'COD'
   return {
     items: items.map((l) => ({ productId: l.productId, qty: l.qty, bundleId: l.bundleId, lineTotal: l.lineTotal, discount: l.discount ?? 0, packPct: l.packPct })),
     productTotal, bundleDiscount, packDiscount, multiItemDiscount, tierPct,
+    personalDiscount, offer: offer?.pct ? { pct: offer.pct, code: offer.code, reason: offer.reason, categories: offer.categories } : null,
     deliveryFee, codFee, total, savings, mrpSavings,
     nudges: nudgeList,
     gap,

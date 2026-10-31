@@ -36,6 +36,44 @@ function OtpBoxes({ value, onChange, onComplete }) {
   )
 }
 
+const KEY_STORE = 'meesho.gemini.key'
+const readKey = () => {
+  try {
+    return localStorage.getItem(KEY_STORE) ?? ''
+  } catch {
+    return ''
+  }
+}
+
+/** Full-screen step list shown while Gemini (or the rules) update the buyer's preferences. */
+function Personalising({ state, onContinue, t }) {
+  const usingAi = state.usingAi
+  const steps = [t('pStep1'), usingAi ? t('pStep2', { ai: 'Gemini' }) : t('pStep2Rules'), t('pStep3')]
+  return (
+    <div className="perso-overlay">
+      <div className="perso-card">
+        <div className="perso-spark">✨</div>
+        <h2>{state.result ? t('pDone') : t('personalising')}</h2>
+        <ol className="perso-steps">
+          {steps.map((s, i) => (
+            <li key={s} className={state.step > i ? 'done' : state.step === i ? 'now' : ''}>{state.step > i ? '✓' : state.step === i ? '◌' : '·'} {s}</li>
+          ))}
+        </ol>
+        {state.result && (
+          <>
+            <div className={'perso-source ' + state.result.source}>
+              {state.result.source === 'gemini' ? `✨ Gemini · ${state.result.model}` : `⚙️ Rules${state.result.fallbackReason ? ' · ' + state.result.fallbackReason : ''}`}
+              <small> · v{state.result.version} · {state.result.sessions} past sessions · {(state.result.ms / 1000).toFixed(1)}s</small>
+            </div>
+            <ul className="perso-changes">{state.result.changes.map((c) => <li key={c}>{c}</li>)}</ul>
+            <button className="btn-primary wide" onClick={onContinue}>{t('pContinue')} →</button>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function Login() {
   const { profiles, login, lang, setLang, t, tx } = useApp()
   const navigate = useNavigate()
@@ -47,6 +85,9 @@ export default function Login() {
   const [busy, setBusy] = useState(false)
   const [sms, setSms] = useState(null)
   const [timer, setTimer] = useState(0)
+  const [keyInput, setKeyInput] = useState('')
+  const [savedKey, setSavedKey] = useState(() => readKey())
+  const [perso, setPerso] = useState(null) // personalisation progress after sign-in
 
   useEffect(() => {
     if (!timer) return
@@ -86,8 +127,23 @@ export default function Login() {
     setError(null)
     try {
       const r = await api.verifyOtp(phone, role, code)
-      login(r.profileId, r.token)
-      navigate(role === 'seller' ? '/seller' : role === 'ops' ? '/ops' : '/', { replace: true })
+      const enter = () => {
+        login(r.profileId, r.token)
+        navigate(role === 'seller' ? '/seller' : role === 'ops' ? '/ops' : '/', { replace: true })
+      }
+      setSms(null)
+      if (role !== 'buyer') return enter()
+      // buyers: update preferences from their behaviour history before the store loads
+      const key = keyInput.trim() || savedKey
+      if (keyInput.trim()) {
+        try { localStorage.setItem(KEY_STORE, keyInput.trim()) } catch { /* ignore */ }
+        setSavedKey(keyInput.trim())
+      }
+      setPerso({ step: 0, usingAi: !!key })
+      await new Promise((res) => setTimeout(res, 500))
+      setPerso({ step: 1, usingAi: !!key })
+      const result = await api.users.personalise(r.profileId, key).catch((e) => ({ source: 'rules', error: e.message, changes: ['Could not update preferences — using saved ones'], sessions: 0, ms: 0, version: '?' }))
+      setPerso({ step: 3, usingAi: !!key, result, enter })
     } catch (err) {
       setError(err.code === 'wrong_otp' ? t('wrongOtp') : err.message)
       setOtp('')
@@ -104,6 +160,7 @@ export default function Login() {
 
   return (
     <div className="login-page">
+      {perso && <Personalising state={perso} t={t} onContinue={() => perso.enter?.()} />}
       {sms && (
         <button className="sms-toast" onClick={() => { setOtp(sms); setSms(null); verify(sms) }}>
           <span className="sms-app">💬 Messages · now</span>
@@ -149,6 +206,15 @@ export default function Login() {
                 onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
               />
             </div>
+            {role === 'buyer' && (
+              <div className="gemini-key">
+                <label>🔑 {t('geminiKey', { ai: 'Gemini' })}</label>
+                <input type="password" autoComplete="off" value={keyInput} placeholder={savedKey ? '••••••••' + savedKey.slice(-4) : 'AIza…'} onChange={(e) => setKeyInput(e.target.value)} />
+                <small className="muted">
+                  {savedKey && !keyInput ? <>{t('geminiSaved', { last4: savedKey.slice(-4) })} · <button type="button" className="link" onClick={() => { try { localStorage.removeItem(KEY_STORE) } catch { /* ignore */ } setSavedKey('') }}>{t('geminiForget')}</button></> : t('geminiHint')}
+                </small>
+              </div>
+            )}
             {error && <div className="login-error">{error}</div>}
             <button className="btn-primary wide" disabled={busy || phone.length !== 10}>{busy ? '…' : t('sendOtp')}</button>
           </form>

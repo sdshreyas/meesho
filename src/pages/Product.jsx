@@ -1,5 +1,6 @@
-import { useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
+import { track } from '../tracking/tracker.js'
 import { api } from '../api.js'
 import { inr, useApp } from '../store.jsx'
 import { useFetch } from '../useFetch.js'
@@ -19,6 +20,10 @@ export default function Product() {
   const [size, setSize] = useState(null)
   const [pack, setPack] = useState(1)
   const [added, setAdded] = useState(false)
+  const location = useLocation()
+  useEffect(() => {
+    track('product_view', { productId: id, source: location.state?.from ?? 'direct', query: location.state?.query ?? null })
+  }, [id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading && !data) return <main className="page"><div className="loading">…</div></main>
   if (!data) return <main className="page">Not found</main>
@@ -109,7 +114,7 @@ export default function Product() {
         <section>
           <h3 className="section-title">{t('frequentlyBought')}</h3>
           <div className="grid grid-6">
-            {frequentlyBought.map((x) => <ProductCard key={x.id} p={x} compact onAdd={(q) => addToCart(q.id)} />)}
+            {frequentlyBought.map((x) => <ProductCard key={x.id} p={x} compact from="fbt" onAdd={(q) => addToCart(q.id)} />)}
           </div>
         </section>
       )}
@@ -117,7 +122,7 @@ export default function Product() {
       <section>
         <h3 className="section-title">{t('similarProducts')}</h3>
         <div className="grid grid-6">
-          {similar.map((x) => <ProductCard key={x.id} p={x} />)}
+          {similar.map((x) => <ProductCard key={x.id} p={x} from="similar" />)}
         </div>
       </section>
     </main>

@@ -4,6 +4,7 @@ import { useApp } from '../store.jsx'
 import { LANGUAGES } from '../data/languages.js'
 import { CATEGORY_KEYS } from '../i18n/strings.js'
 import ThemeToggle from './ThemeToggle.jsx'
+import { track } from '../tracking/tracker.js'
 
 export default function Header() {
   const { profile, logout, lang, setLang, translating, trSource, nudges, setNudges, cart, t, tx } = useApp()
@@ -27,6 +28,7 @@ export default function Header() {
             className="search"
             onSubmit={(e) => {
               e.preventDefault()
+              if (q) track('search', { query: q.trim().toLowerCase() })
               navigate(q ? `/?q=${encodeURIComponent(q)}` : '/')
             }}
           >
@@ -67,6 +69,10 @@ export default function Header() {
               <span className="dot" /> {t('aiNudges')} {nudges ? t('on') : t('off')}
             </button>
           )}
+          <NavLink to="/my-data" className="icon-link">
+            <span aria-hidden>📊</span>
+            <small>{t('myData')}</small>
+          </NavLink>
           {isBuyer && (
             <>
               <NavLink to="/orders" className="icon-link">

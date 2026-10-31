@@ -26,7 +26,7 @@ export function Reasons({ reasons }) {
   )
 }
 
-export default function ProductCard({ p, onAdd, compact }) {
+export default function ProductCard({ p, onAdd, compact, from = 'feed', query }) {
   const { t, tx, wishlist, toggleWish } = useApp()
   const off = Math.round((1 - p.price / p.mrp) * 100)
   const wished = wishlist.includes(p.id)
@@ -35,7 +35,7 @@ export default function ProductCard({ p, onAdd, compact }) {
       <button className={'heart' + (wished ? ' on' : '')} onClick={() => toggleWish(p.id)} aria-label={t('wishlist')} title={t('wishlist')}>
         {wished ? '♥' : '♡'}
       </button>
-      <Link to={`/product/${p.id}`} className="card-link">
+      <Link to={`/product/${p.id}`} state={{ from, query }} className="card-link">
         <div className="card-img">
           <img src={img(p.image)} alt={p.name} loading="lazy" />
         </div>
