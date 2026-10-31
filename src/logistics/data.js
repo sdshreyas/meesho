@@ -160,6 +160,7 @@ export const sellersByProduct = (() => {
 
 // Shipping weight (kg) by subcategory, with a few heavy appliances
 const WEIGHT = {
+  Sarees: 0.6, Lehengas: 1.1, Dupattas: 0.25, 'Western Wear': 0.6, Wallets: 0.15, Backpacks: 0.8, 'T-shirts': 0.25, Jackets: 0.7,
   Dresses: 0.45, 'Tops & Kurtis': 0.35, Shirts: 0.35, Jewellery: 0.12, Watches: 0.25, Sunglasses: 0.2,
   Handbags: 0.7, 'Women Footwear': 0.9, 'Men Footwear': 1.1, Makeup: 0.15, Fragrances: 0.35, 'Skin Care': 0.4,
   Kitchen: 0.8, 'Home Decor': 1.2, 'Mobile Accessories': 0.3, Fitness: 1.0,
@@ -170,6 +171,8 @@ const DIMS = {
   Sunglasses: [16, 7, 5], Handbags: [30, 24, 10], 'Women Footwear': [28, 18, 10], 'Men Footwear': [31, 20, 11],
   Makeup: [10, 7, 4], Fragrances: [12, 7, 7], 'Skin Care': [16, 7, 5], Kitchen: [24, 15, 8], 'Home Decor': [25, 20, 15],
   'Mobile Accessories': [13, 9, 5], Fitness: [24, 24, 24],
+  Sarees: [30, 25, 5], Lehengas: [35, 30, 8], Dupattas: [25, 20, 3], 'Western Wear': [30, 25, 6],
+  Wallets: [12, 10, 3], Backpacks: [40, 30, 15], 'T-shirts': [26, 20, 3], Jackets: [32, 26, 8],
 }
 export function dimsOf(p) {
   if (p.price > 4000) return [52, 38, 32] // microwave

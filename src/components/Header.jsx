@@ -3,6 +3,7 @@ import { Link, NavLink, useNavigate, useSearchParams } from 'react-router-dom'
 import { useApp } from '../store.jsx'
 import { LANGUAGES } from '../data/languages.js'
 import { CATEGORY_KEYS } from '../i18n/strings.js'
+import ThemeToggle from './ThemeToggle.jsx'
 
 export default function Header() {
   const { profile, logout, lang, setLang, translating, trSource, nudges, setNudges, cart, t, tx } = useApp()
@@ -37,6 +38,7 @@ export default function Header() {
         {isOps && <div className="seller-badge ops">🚚 Valmo Control Tower</div>}
 
         <div className="header-controls">
+          <ThemeToggle />
           <div className="account">
             <span className="avatar sm">{profile.name.split(' ').map((w) => w[0]).join('')}</span>
             <span className="account-info">

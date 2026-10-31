@@ -8,6 +8,11 @@ const RETURN_BENCHMARK = {
 }
 const RETURN_FEE_PER_UNIT = 35
 const RETURN_REASON = {
+  Sarees: ['Colour different from photo', 'Upload real photos in daylight, no filters'],
+  Lehengas: ['Size / fit mismatch', 'Add a measured size chart with model height'],
+  'Western Wear': ['Size / fit mismatch', 'Add a measured size chart with model height'],
+  'T-shirts': ['Size / fit mismatch', 'Show chest & length in cm for each size'],
+  Jackets: ['Size / fit mismatch', 'Show chest & length in cm for each size'],
   Dresses: ['Size / fit mismatch', 'Add a measured size chart with model height'],
   'Tops & Kurtis': ['Size / fit mismatch', 'Add a measured size chart with model height'],
   Shirts: ['Size / fit mismatch', 'Show chest & length in cm for each size'],

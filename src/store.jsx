@@ -44,6 +44,8 @@ export function AppProvider({ children }) {
   const [nudges, setNudges] = usePersisted('nudges', true)
   const [carts, setCarts] = usePersisted('carts', {})
   const [session, setSession] = usePersisted('session', null)
+  const [theme, setTheme] = usePersisted('theme', typeof matchMedia !== 'undefined' && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+  const [wishlists, setWishlists] = usePersisted('wishlist', {})
   const [tr, setTr] = useState({ lang: 'en', map: {}, source: null })
   const [translating, setTranslating] = useState(false)
 
@@ -57,6 +59,25 @@ export function AppProvider({ children }) {
       if (p) setLangRaw(p.language)
     },
     [setProfileId, setLangRaw],
+  )
+
+  // dark/light for every account; feminine look for logged-in women buyers
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme
+  }, [theme])
+  const feminine = !!session && profile.type === 'buyer' && profile.gender === 'women'
+  useEffect(() => {
+    document.documentElement.dataset.look = feminine ? 'feminine' : 'classic'
+  }, [feminine])
+  const toggleTheme = useCallback(() => setTheme((t) => (t === 'dark' ? 'light' : 'dark')), [setTheme])
+
+  const wishlist = wishlists[profile.id] ?? EMPTY_CART
+  const toggleWish = useCallback(
+    (id) => setWishlists((all) => {
+      const cur = all[profile.id] ?? []
+      return { ...all, [profile.id]: cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id] }
+    }),
+    [profile.id, setWishlists],
   )
 
   const login = useCallback(
@@ -117,12 +138,14 @@ export function AppProvider({ children }) {
     () => ({
       profile, profiles: PROFILES, switchProfile,
       session, login, logout,
+      theme, toggleTheme, feminine,
+      wishlist, toggleWish,
       lang, setLang: setLangRaw, translating, trSource: tr.source,
       nudges, setNudges,
       cart, setCart, addToCart,
       t, tx,
     }),
-    [profile, switchProfile, session, login, logout, lang, setLangRaw, translating, tr.source, nudges, setNudges, cart, setCart, addToCart, t, tx],
+    [profile, switchProfile, session, login, logout, theme, toggleTheme, feminine, wishlist, toggleWish, lang, setLangRaw, translating, tr.source, nudges, setNudges, cart, setCart, addToCart, t, tx],
   )
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }

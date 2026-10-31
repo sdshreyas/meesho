@@ -2,7 +2,7 @@
 // product photos into public/images/. Photos come from the free dummyjson.com API.
 // Usage: node scripts/build-catalog.mjs
 import { createHash } from 'node:crypto'
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -199,5 +199,35 @@ for (const [cat, ourCat, n, [lo, hi], [rlo, rhi]] of PLAN) {
     })
   }
 }
+// Extra women's & men's products (Wikimedia Commons + FakeStore photos; credits in src/data/credits.json)
+const extra = JSON.parse(readFileSync(join(ROOT, 'scripts/extra-products.json'), 'utf8'))
+for (const x of extra) {
+  const image = `images/${x.id}.${x.ext}`
+  const dest = join(ROOT, 'public', image)
+  if (!existsSync(dest)) {
+    const img = await fetch(x.url, { headers: { 'User-Agent': 'MeeshoCasePrototype/1.0 (student project)' } })
+    writeFileSync(dest, Buffer.from(await img.arrayBuffer()))
+  }
+  const key = x.name
+  out.push({
+    id: x.id, name: x.name, description: x.description, category: x.category, subcategory: x.subcategory,
+    gender: x.gender, style: x.style, price: x.price, mrp: r9(x.price * (1.7 + h(key + 'm', 80) / 100)),
+    rating: Math.round((3.8 + h(key + 'r', 11) / 10) * 10) / 10, ratingCount: 150 + h(key + 'c', 6000),
+    image, tags: x.tags, sellerId: x.gender === 'men' || x.category === 'Bags & Footwear' ? 'S2' : 'S1',
+    returnRate: (x.category === 'Women Fashion' ? 16 : 6) + h(key + 'rr', 12),
+    stock: 10 + h(key + 's', 90),
+    weeklySales: Array.from({ length: 8 }, (_, w) => 3 + h(key + w, 12) + Math.floor((w * h(key + 'g', 4)) / 2)),
+  })
+}
+
+// ethnic vs western style tag for fashion & accessories (drives style-matched recommendations)
+const ETHNIC = /kurti|kurta|anarkali|jhumka|saree|lehenga|dupatta|bangle|payal|anklet|jutti|mojari|kolhapuri|ethnic|jhula/i
+const FASHION = ['Women Fashion', 'Men Fashion', 'Bags & Footwear', 'Jewellery & Accessories']
+for (const p of out) p.style ??= !FASHION.includes(p.category) ? null : ETHNIC.test(p.name) ? 'ethnic' : 'western'
+
+// photos that don't match their source category's gender
+const GENDER_FIX = { 'Moonphase Dial Analog Watch': 'men' }
+for (const p of out) if (GENDER_FIX[p.name]) p.gender = GENDER_FIX[p.name]
+
 writeFileSync(join(ROOT, 'src/data/products.json'), JSON.stringify(out, null, 1))
 console.log(out.length, 'products written')

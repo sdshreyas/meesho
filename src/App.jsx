@@ -1,4 +1,4 @@
-import { HashRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { HashRouter, Link, Navigate, Route, Routes } from 'react-router-dom'
 import { AppProvider, useApp } from './store.jsx'
 import Header from './components/Header.jsx'
 import Home from './pages/Home.jsx'
@@ -9,6 +9,7 @@ import Track from './pages/Track.jsx'
 import Seller from './pages/Seller.jsx'
 import Login from './pages/Login.jsx'
 import Ops from './pages/Ops.jsx'
+import Credits from './pages/Credits.jsx'
 
 function Shell() {
   const { profile, session, t } = useApp()
@@ -26,9 +27,10 @@ function Shell() {
         <Route path="/orders" element={<Orders />} />
         <Route path="/track/:id" element={<Track />} />
         <Route path="/seller" element={<Seller />} />
+        <Route path="/credits" element={<Credits />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-      <footer className="footer">{t('prototypeNote')}</footer>
+      <footer className="footer">{t('prototypeNote')} <Link to="/credits">{t('credits')}</Link></footer>
     </>
   )
 }

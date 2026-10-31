@@ -17,6 +17,16 @@ export function scoreProduct(p, persona, ctx = {}, byId = {}) {
   if (aff >= 0.7) add('r_category', aff * 3)
 
   if (!genderOk(p, persona)) score -= 5
+  // gender-apt: made-for-you items lift, generic gadgets/sports sink unless the persona likes that category
+  if (persona.gender && p.gender === persona.gender) {
+    score += 1
+    add('r_gender', 1.05)
+  } else if (persona.gender && p.gender === 'unisex' && aff < 0.5) score -= 0.8
+
+  if (p.style && persona.styles?.includes(p.style)) {
+    score += 0.7
+    add('r_style_' + p.style, 1.1)
+  }
 
   const [lo, hi] = persona.priceBand
   const mid = (lo + hi) / 2

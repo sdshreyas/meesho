@@ -4,6 +4,7 @@ import { api } from '../api.js'
 import { useApp } from '../store.jsx'
 import { LANGUAGES } from '../data/languages.js'
 import { DEMO_OTP } from '../data/personas.js'
+import ThemeToggle from '../components/ThemeToggle.jsx'
 
 const OTP_LEN = 6
 const RESEND_SECONDS = 30
@@ -122,6 +123,7 @@ export default function Login() {
 
       <section className="login-card">
         <div className="login-top">
+          <ThemeToggle />
           <select value={lang} onChange={(e) => setLang(e.target.value)} aria-label={t('language')}>
             {LANGUAGES.map((l) => <option key={l.code} value={l.code}>{l.native}</option>)}
           </select>

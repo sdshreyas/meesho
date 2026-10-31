@@ -16,6 +16,14 @@ export default function Home() {
   const bundles = useFetch(() => api.bundles({ persona: profile.id, nudges: nf }), [profile.id, nf])
 
   const list = feed.data ?? []
+  // curated edits from the personalised feed, by persona gender & style
+  const women = profile.gender === 'women'
+  const edits = !nudges || cat || q ? [] : women
+    ? [
+        { key: 'ethnic', title: t('ethnicEdit'), sub: t('ethnicEditSub'), items: list.filter((p) => p.style === 'ethnic' && p.gender !== 'men').slice(0, 10) },
+        ...(profile.styles?.includes('western') ? [{ key: 'western', title: t('westernEdit'), sub: '', items: list.filter((p) => p.style === 'western' && p.gender === 'women').slice(0, 10) }] : []),
+      ]
+    : [{ key: 'mens', title: t('mensEdit'), sub: t('mensEditSub'), items: list.filter((p) => p.gender === 'men').slice(0, 10) }]
   const top = nudges && !cat && !q ? list.slice(0, 6) : []
   const rest = nudges && !cat && !q ? list.slice(6) : list
   const initials = profile.name.split(' ').map((s) => s[0]).join('')
@@ -48,6 +56,18 @@ export default function Home() {
           </div>
         </section>
       )}
+
+      {edits.filter((e) => e.items.length >= 4).map((e) => (
+        <section key={e.key} className={'edit ' + e.key}>
+          <div className="edit-head">
+            <h3>{e.key === 'ethnic' ? '🪷 ' : e.key === 'mens' ? '🧔 ' : '👗 '}{e.title}</h3>
+            {e.sub && <small>{e.sub}</small>}
+          </div>
+          <div className="edit-strip">
+            {e.items.map((p) => <ProductCard key={p.id} p={p} />)}
+          </div>
+        </section>
+      ))}
 
       {!cat && !q && bundles.data?.length > 0 && (
         <section>

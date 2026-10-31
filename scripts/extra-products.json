@@ -1,0 +1,508 @@
+[
+ {
+  "id": "P101",
+  "key": "w_saree1",
+  "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/44/Sari_on_mannequin_for_demo.jpg/500px-Sari_on_mannequin_for_demo.jpg",
+  "ext": "jpg",
+  "name": "Festive Silk Saree with Blouse Piece",
+  "category": "Women Fashion",
+  "subcategory": "Sarees",
+  "gender": "women",
+  "style": "ethnic",
+  "price": 549,
+  "tags": [
+   "festive",
+   "trending"
+  ],
+  "description": "Lightweight art-silk saree with a contrast pallu and unstitched blouse piece — easy drape for festivals and weddings."
+ },
+ {
+  "id": "P102",
+  "key": "w_saree2",
+  "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/86/Embroidery_on_a_saree_01.jpg/500px-Embroidery_on_a_saree_01.jpg",
+  "ext": "jpg",
+  "name": "Peacock Embroidered Border Saree",
+  "category": "Women Fashion",
+  "subcategory": "Sarees",
+  "gender": "women",
+  "style": "ethnic",
+  "price": 649,
+  "tags": [
+   "festive",
+   "gift"
+  ],
+  "description": "Cream saree with a hand-embroidered peacock border in turquoise, orange and gold thread."
+ },
+ {
+  "id": "P103",
+  "key": "w_lehenga1",
+  "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d1/Ethnic_wear_for_women_Blue_Lehenga.png/500px-Ethnic_wear_for_women_Blue_Lehenga.png",
+  "ext": "jpg",
+  "name": "Navy Lehenga Choli Set",
+  "category": "Women Fashion",
+  "subcategory": "Lehengas",
+  "gender": "women",
+  "style": "ethnic",
+  "price": 899,
+  "tags": [
+   "festive",
+   "trending"
+  ],
+  "description": "Flared navy lehenga with embroidered hem, matching choli and dupatta. Semi-stitched."
+ },
+ {
+  "id": "P104",
+  "key": "w_dupatta1",
+  "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f8/Bandhani_Dupatta_%285788125979%29.jpg/500px-Bandhani_Dupatta_%285788125979%29.jpg",
+  "ext": "jpg",
+  "name": "Pink Bandhani Dupatta",
+  "category": "Women Fashion",
+  "subcategory": "Dupattas",
+  "gender": "women",
+  "style": "ethnic",
+  "price": 249,
+  "tags": [
+   "budget",
+   "festive",
+   "bulk-friendly"
+  ],
+  "description": "Hand-tied bandhani dupatta from Gujarat in rani pink with white dots."
+ },
+ {
+  "id": "P105",
+  "key": "w_dupatta2",
+  "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/31/Bandhani_Dupatta_%287034542551%29.jpg/500px-Bandhani_Dupatta_%287034542551%29.jpg",
+  "ext": "jpg",
+  "name": "Blue Bandhani Dupatta",
+  "category": "Women Fashion",
+  "subcategory": "Dupattas",
+  "gender": "women",
+  "style": "ethnic",
+  "price": 229,
+  "tags": [
+   "budget",
+   "bulk-friendly"
+  ],
+  "description": "Indigo bandhani dupatta, soft cotton blend, 2.25 m."
+ },
+ {
+  "id": "P106",
+  "key": "w_bangles1",
+  "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/fa/Bangles_in_green_and_orange.jpg/500px-Bangles_in_green_and_orange.jpg",
+  "ext": "jpg",
+  "name": "Lac Bangles Set (Red & Green)",
+  "category": "Jewellery & Accessories",
+  "subcategory": "Jewellery",
+  "gender": "women",
+  "style": "ethnic",
+  "price": 149,
+  "tags": [
+   "budget",
+   "festive",
+   "bulk-friendly"
+  ],
+  "description": "Set of 12 lac bangles in festive red, green and orange. Sizes 2.4 to 2.8."
+ },
+ {
+  "id": "P107",
+  "key": "w_jhumka1",
+  "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/6d/Gold_Jhumka%2C_Dogra_Culture%2C_Jammu.jpg/500px-Gold_Jhumka%2C_Dogra_Culture%2C_Jammu.jpg",
+  "ext": "jpg",
+  "name": "Gold-tone Jhumka Earrings",
+  "category": "Jewellery & Accessories",
+  "subcategory": "Jewellery",
+  "gender": "women",
+  "style": "ethnic",
+  "price": 199,
+  "tags": [
+   "budget",
+   "festive",
+   "bulk-friendly",
+   "trending"
+  ],
+  "description": "Lightweight gold-plated jhumkas with temple-style dome and bead drops."
+ },
+ {
+  "id": "P108",
+  "key": "w_jhumka2",
+  "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b1/Silver_Dogri_Jhumka_with_glass%2C_possibly_late_19th-early_20th_century%2C_Bilaspur.jpg/500px-Silver_Dogri_Jhumka_with_glass%2C_possibly_late_19th-early_20th_century%2C_Bilaspur.jpg",
+  "ext": "jpg",
+  "name": "Oxidised Silver Jhumkas",
+  "category": "Jewellery & Accessories",
+  "subcategory": "Jewellery",
+  "gender": "women",
+  "style": "ethnic",
+  "price": 179,
+  "tags": [
+   "budget",
+   "festive",
+   "bulk-friendly"
+  ],
+  "description": "Oxidised silver-tone jhumkas with glass stones — goes with cotton kurtis and sarees."
+ },
+ {
+  "id": "P109",
+  "key": "w_payal1",
+  "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/03/Dogri_payal.jpg/500px-Dogri_payal.jpg",
+  "ext": "jpg",
+  "name": "Ghungroo Payal (Pair)",
+  "category": "Jewellery & Accessories",
+  "subcategory": "Jewellery",
+  "gender": "women",
+  "style": "ethnic",
+  "price": 219,
+  "tags": [
+   "budget",
+   "festive",
+   "gift"
+  ],
+  "description": "Silver-tone anklet pair with tiny ghungroo bells and adjustable hook."
+ },
+ {
+  "id": "P110",
+  "key": "w_payal2",
+  "url": "https://upload.wikimedia.org/wikipedia/commons/c/c3/Anklets%2CPayal%2C_Jharkhand.jpg",
+  "ext": "jpg",
+  "name": "Traditional Anklet Pair",
+  "category": "Jewellery & Accessories",
+  "subcategory": "Jewellery",
+  "gender": "women",
+  "style": "ethnic",
+  "price": 189,
+  "tags": [
+   "budget",
+   "bulk-friendly"
+  ],
+  "description": "Chunky traditional anklets inspired by Jharkhand tribal jewellery."
+ },
+ {
+  "id": "P111",
+  "key": "w_jutti1",
+  "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c9/Punjabi_jutti_at_Dilli_Haat.jpg/500px-Punjabi_jutti_at_Dilli_Haat.jpg",
+  "ext": "jpg",
+  "name": "Embroidered Punjabi Juttis (Women)",
+  "category": "Bags & Footwear",
+  "subcategory": "Women Footwear",
+  "gender": "women",
+  "style": "ethnic",
+  "price": 399,
+  "tags": [
+   "festive",
+   "trending"
+  ],
+  "description": "Hand-embroidered leather juttis with cushioned sole — pairs with lehengas and suits."
+ },
+ {
+  "id": "P112",
+  "key": "m_jutti2",
+  "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/93/Fazilka_jutti.jpg/500px-Fazilka_jutti.jpg",
+  "ext": "jpg",
+  "name": "Phulkari Juttis (Women)",
+  "category": "Bags & Footwear",
+  "subcategory": "Women Footwear",
+  "gender": "women",
+  "style": "ethnic",
+  "price": 349,
+  "tags": [
+   "festive",
+   "bulk-friendly"
+  ],
+  "description": "Colourful phulkari-thread juttis from Fazilka, Punjab."
+ },
+ {
+  "id": "P113",
+  "key": "w_kolha1",
+  "url": "https://upload.wikimedia.org/wikipedia/commons/8/86/Kolhapur_chappal.jpg",
+  "ext": "jpg",
+  "name": "Kolhapuri Chappals (Women)",
+  "category": "Bags & Footwear",
+  "subcategory": "Women Footwear",
+  "gender": "women",
+  "style": "ethnic",
+  "price": 329,
+  "tags": [
+   "trending"
+  ],
+  "description": "Classic tan Kolhapuri chappals in genuine leather with toe ring."
+ },
+ {
+  "id": "P114",
+  "key": "fs15",
+  "url": "https://fakestoreapi.com/img/51Y5NI-I5jL._AC_UX679_t.png",
+  "ext": "png",
+  "name": "Quilted Winter Jacket (Women)",
+  "category": "Women Fashion",
+  "subcategory": "Western Wear",
+  "gender": "women",
+  "style": "western",
+  "price": 799,
+  "tags": [
+   "trending"
+  ],
+  "description": "Warm quilted jacket with detachable hood and inner fleece."
+ },
+ {
+  "id": "P115",
+  "key": "fs16",
+  "url": "https://fakestoreapi.com/img/81XH0e8fefL._AC_UY879_t.png",
+  "ext": "png",
+  "name": "Faux Leather Biker Jacket (Women)",
+  "category": "Women Fashion",
+  "subcategory": "Western Wear",
+  "gender": "women",
+  "style": "western",
+  "price": 749,
+  "tags": [
+   "trending"
+  ],
+  "description": "Black faux-leather biker jacket with removable hood."
+ },
+ {
+  "id": "P116",
+  "key": "fs17",
+  "url": "https://fakestoreapi.com/img/71HblAHs5xL._AC_UY879_-2t.png",
+  "ext": "png",
+  "name": "Striped Rain Jacket (Women)",
+  "category": "Women Fashion",
+  "subcategory": "Western Wear",
+  "gender": "women",
+  "style": "western",
+  "price": 599,
+  "tags": [],
+  "description": "Light windbreaker rain jacket with stripes and drawstring hood."
+ },
+ {
+  "id": "P117",
+  "key": "fs18",
+  "url": "https://fakestoreapi.com/img/71z3kpMAYsL._AC_UY879_t.png",
+  "ext": "png",
+  "name": "Boat Neck Top (Women)",
+  "category": "Women Fashion",
+  "subcategory": "Western Wear",
+  "gender": "women",
+  "style": "western",
+  "price": 249,
+  "tags": [
+   "budget",
+   "bulk-friendly"
+  ],
+  "description": "Solid boat-neck short-sleeve top in stretch fabric."
+ },
+ {
+  "id": "P118",
+  "key": "fs19",
+  "url": "https://fakestoreapi.com/img/51eg55uWmdL._AC_UX679_t.png",
+  "ext": "png",
+  "name": "Active Sports Tee (Women)",
+  "category": "Women Fashion",
+  "subcategory": "Western Wear",
+  "gender": "women",
+  "style": "western",
+  "price": 229,
+  "tags": [
+   "budget"
+  ],
+  "description": "Moisture-wicking short-sleeve tee for yoga and walks."
+ },
+ {
+  "id": "P119",
+  "key": "fs20",
+  "url": "https://fakestoreapi.com/img/61pHAEJ4NML._AC_UX679_t.png",
+  "ext": "png",
+  "name": "Casual Cotton Tee (Women)",
+  "category": "Women Fashion",
+  "subcategory": "Western Wear",
+  "gender": "women",
+  "style": "western",
+  "price": 199,
+  "tags": [
+   "budget",
+   "bulk-friendly",
+   "trending"
+  ],
+  "description": "Soft cotton crew-neck tee with print."
+ },
+ {
+  "id": "P120",
+  "key": "fs5",
+  "url": "https://fakestoreapi.com/img/71pWzhdJNwL._AC_UL640_QL65_ML3_t.png",
+  "ext": "png",
+  "name": "Dragon Link Bracelet",
+  "category": "Jewellery & Accessories",
+  "subcategory": "Jewellery",
+  "gender": "women",
+  "style": "western",
+  "price": 299,
+  "tags": [
+   "gift"
+  ],
+  "description": "Gold and silver-tone link bracelet."
+ },
+ {
+  "id": "P121",
+  "key": "fs6",
+  "url": "https://fakestoreapi.com/img/61sbMiUnoGL._AC_UL640_QL65_ML3_t.png",
+  "ext": "png",
+  "name": "Gold-plated Petite Ring",
+  "category": "Jewellery & Accessories",
+  "subcategory": "Jewellery",
+  "gender": "women",
+  "style": "western",
+  "price": 159,
+  "tags": [
+   "budget",
+   "gift"
+  ],
+  "description": "Dainty gold-plated ring with micropave stones."
+ },
+ {
+  "id": "P122",
+  "key": "fs7",
+  "url": "https://fakestoreapi.com/img/71YAIFU48IL._AC_UL640_QL65_ML3_t.png",
+  "ext": "png",
+  "name": "Solitaire Style Promise Ring",
+  "category": "Jewellery & Accessories",
+  "subcategory": "Jewellery",
+  "gender": "women",
+  "style": "western",
+  "price": 199,
+  "tags": [
+   "festive",
+   "gift"
+  ],
+  "description": "White-gold plated ring with a princess-cut stone."
+ },
+ {
+  "id": "P123",
+  "key": "fs8",
+  "url": "https://fakestoreapi.com/img/51UDEzMJVpL._AC_UL640_QL65_ML3_t.png",
+  "ext": "png",
+  "name": "Rose Gold Flare Earrings",
+  "category": "Jewellery & Accessories",
+  "subcategory": "Jewellery",
+  "gender": "women",
+  "style": "western",
+  "price": 189,
+  "tags": [
+   "budget",
+   "gift",
+   "trending"
+  ],
+  "description": "Rose-gold plated double-flare tunnel earrings."
+ },
+ {
+  "id": "P124",
+  "key": "m_jutti1",
+  "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/81/Indian_juttis%2C_late_20th_century%2C_Punjab_-_Bata_Shoe_Museum_-_DSC00432.JPG/500px-Indian_juttis%2C_late_20th_century%2C_Punjab_-_Bata_Shoe_Museum_-_DSC00432.JPG",
+  "ext": "jpg",
+  "name": "Embroidered Mojari (Men)",
+  "category": "Bags & Footwear",
+  "subcategory": "Men Footwear",
+  "gender": "men",
+  "style": "ethnic",
+  "price": 499,
+  "tags": [
+   "festive",
+   "gift"
+  ],
+  "description": "Hand-embroidered Punjabi mojari for weddings and festivals."
+ },
+ {
+  "id": "P125",
+  "key": "m_wallet1",
+  "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/15/Aarong_leather_wallet.jpg/500px-Aarong_leather_wallet.jpg",
+  "ext": "jpg",
+  "name": "Genuine Leather Wallet (Men)",
+  "category": "Jewellery & Accessories",
+  "subcategory": "Wallets",
+  "gender": "men",
+  "style": "western",
+  "price": 299,
+  "tags": [
+   "gift"
+  ],
+  "description": "Two-tone leather wallet with coin pocket and 6 card slots."
+ },
+ {
+  "id": "P126",
+  "key": "m_wallet2",
+  "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/ce/Leather_bi-fold_wallet_by_Eugene_Pik_%282021%29_04.jpg/500px-Leather_bi-fold_wallet_by_Eugene_Pik_%282021%29_04.jpg",
+  "ext": "jpg",
+  "name": "Slim Bi-fold Wallet (Men)",
+  "category": "Jewellery & Accessories",
+  "subcategory": "Wallets",
+  "gender": "men",
+  "style": "western",
+  "price": 249,
+  "tags": [
+   "budget",
+   "gift",
+   "trending"
+  ],
+  "description": "Slim bi-fold wallet in textured leather."
+ },
+ {
+  "id": "P127",
+  "key": "fs1",
+  "url": "https://fakestoreapi.com/img/81fPKd-2AYL._AC_SL1500_t.png",
+  "ext": "png",
+  "name": "Laptop Backpack 15.6 inch",
+  "category": "Bags & Footwear",
+  "subcategory": "Backpacks",
+  "gender": "men",
+  "style": "western",
+  "price": 699,
+  "tags": [
+   "trending"
+  ],
+  "description": "Water-resistant backpack with padded laptop sleeve."
+ },
+ {
+  "id": "P128",
+  "key": "fs2",
+  "url": "https://fakestoreapi.com/img/71-3HjGNDUL._AC_SY879._SX._UX._SY._UY_t.png",
+  "ext": "png",
+  "name": "Slim Fit Henley T-shirt (Men)",
+  "category": "Men Fashion",
+  "subcategory": "T-shirts",
+  "gender": "men",
+  "style": "western",
+  "price": 279,
+  "tags": [
+   "budget",
+   "bulk-friendly",
+   "trending"
+  ],
+  "description": "Slim-fit henley tee with button placket."
+ },
+ {
+  "id": "P129",
+  "key": "fs3",
+  "url": "https://fakestoreapi.com/img/71li-ujtlUL._AC_UX679_t.png",
+  "ext": "png",
+  "name": "Cotton Utility Jacket (Men)",
+  "category": "Men Fashion",
+  "subcategory": "Jackets",
+  "gender": "men",
+  "style": "western",
+  "price": 799,
+  "tags": [],
+  "description": "Cotton twill jacket with chest pockets."
+ },
+ {
+  "id": "P130",
+  "key": "fs4",
+  "url": "https://fakestoreapi.com/img/71YXzeOuslL._AC_UY879_t.png",
+  "ext": "png",
+  "name": "Full Sleeve Casual T-shirt (Men)",
+  "category": "Men Fashion",
+  "subcategory": "T-shirts",
+  "gender": "men",
+  "style": "western",
+  "price": 299,
+  "tags": [
+   "budget"
+  ],
+  "description": "Full-sleeve round-neck tee in soft cotton."
+ }
+]
