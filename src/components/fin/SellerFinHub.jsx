@@ -18,7 +18,7 @@ export default function SellerFinHub({ sellerId }) {
   if (!u) return <div className="loading">…</div>
   const product = LOAN_PRODUCTS.seller_wc
   const limit = u.limits.seller_wc
-  const amt = amount ?? Math.min(limit, 50000)
+  const amt = Math.min(Math.max(amount === null ? Math.min(limit, 50000) : +amount, product.min), limit)
   const live = u.loans.filter((l) => l.status !== 'cancelled')
 
   return (
@@ -38,8 +38,8 @@ export default function SellerFinHub({ sellerId }) {
           <div className="big-num">{limit ? `Up to ${inr(limit)}` : 'Not eligible yet'}</div>
           {limit > 0 && (
             <>
-              <label className="slider-label">Loan amount: <b>{inr(amt)}</b>
-                <input type="range" min={product.min} max={limit} step={5000} value={amt} onChange={(e) => setAmount(+e.target.value)} />
+              <label className="slider-label">Loan amount (₹{product.min.toLocaleString('en-IN')} – {limit.toLocaleString('en-IN')})
+                <input type="number" min={product.min} max={limit} step={1000} value={amount ?? amt} onChange={(e) => setAmount(e.target.value)} onBlur={() => setAmount(amt)} />
               </label>
               <div className="seg">
                 {product.tenures.map((m) => <button key={m} className={tenure === m ? 'sel' : ''} onClick={() => setTenure(m)}>{m} months</button>)}

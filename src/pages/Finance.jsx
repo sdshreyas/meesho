@@ -146,7 +146,7 @@ function LoanDesk({ d, reload }) {
   const [amount, setAmount] = useState(0)
   const [tenure, setTenure] = useState(product.tenures[1] ?? product.tenures[0])
   const [flow, setFlow] = useState(false)
-  const amt = Math.min(Math.max(amount || Math.round(limit / 2 / 500) * 500, product.min), limit || product.min)
+  const amt = Math.min(Math.max(+amount || Math.round(limit / 2 / 500) * 500, product.min), limit || product.min)
   const ten = product.tenures.includes(tenure) ? tenure : product.tenures[0]
   const cancel = async (id) => {
     await api.finance.cancelLoan(id)
@@ -167,8 +167,8 @@ function LoanDesk({ d, reload }) {
               {u.products.map((p) => <option key={p} value={p}>{d.products[p].label}</option>)}
             </select>
           </label>
-          <label>Amount: <b>{inr(amt)}</b>
-            <input type="range" min={product.min} max={Math.max(product.min, limit)} step={product.min >= 10000 ? 5000 : 500} value={amt} disabled={!limit} onChange={(e) => setAmount(+e.target.value)} />
+          <label>Amount (₹)
+            <input type="number" min={product.min} max={Math.max(product.min, limit)} step={500} value={amount === 0 ? amt : amount} disabled={!limit} onChange={(e) => setAmount(e.target.value)} onBlur={() => setAmount(amt)} />
           </label>
           <label>Tenure
             <select value={ten} onChange={(e) => setTenure(+e.target.value)}>
@@ -177,7 +177,7 @@ function LoanDesk({ d, reload }) {
           </label>
           <label>&nbsp;<button className="btn-primary" disabled={!limit} onClick={() => setFlow(true)}>Get lender offers</button></label>
         </div>
-        <small className="muted">Trust Score {u.score} ({u.band.label}) · limit {limit ? inr(limit) : 'not eligible yet'} · repayment: {product.repay}</small>
+        <small className="muted">Trust Score {u.score} ({u.band.label}) · {limit ? `${inr(product.min)} – ${inr(limit)}` : 'not eligible yet'} · repayment: {product.repay}</small>
       </div>
       {flow && <LoanFlow userId={u.id} productKey={pk} amount={amt} tenure={ten} onClose={() => { setFlow(false); reload() }} onDone={reload} />}
 
