@@ -5,7 +5,7 @@ import { api } from '../api.js'
 import { inr, useApp } from '../store.jsx'
 import { useFetch } from '../useFetch.js'
 import { PACK_DISCOUNTS, RESELL_MARKUP } from '../engine/config.js'
-import ProductCard, { Rating, Reasons, img } from '../components/ProductCard.jsx'
+import ProductCard, { LowReturn, Rating, Reasons, img } from '../components/ProductCard.jsx'
 import BundleCard from '../components/BundleCard.jsx'
 
 const SIZED = ['Women Fashion', 'Men Fashion']
@@ -55,6 +55,7 @@ export default function Product() {
             <span className="off">{t('off_pct', { pct: off })}</span>
           </div>
           <Rating p={p} />
+          <LowReturn p={p} big />
           {p.reasons && <Reasons reasons={p.reasons} />}
 
           {sizes && (

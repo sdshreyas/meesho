@@ -7,8 +7,9 @@ import { langByCode } from '../data/languages.js'
 import { track } from '../tracking/tracker.js'
 import ProductCard from '../components/ProductCard.jsx'
 import BundleCard from '../components/BundleCard.jsx'
+import { LOW_RETURN_PCT } from '../engine/config.js'
+import { SECTIONS } from '../mocks/userdb.js'
 
-const DEFAULT_ORDER = ['reengage', 'recommended', 'edits', 'bundles', 'grid']
 
 export default function Home() {
   const { profile, nudges, t, tx, lang } = useApp()
@@ -41,6 +42,7 @@ export default function Home() {
       ]
     : [{ key: 'mens', title: t('mensEdit'), sub: t('mensEditSub'), items: list.filter((x) => x.gender === 'men').slice(0, 10) }]
   const top = nudges && home ? list.slice(0, 6) : []
+  const keepers = nudges && home ? list.filter((x) => x.returnRate <= LOW_RETURN_PCT).slice(0, 10) : []
   const rest = nudges && home ? list.slice(6) : list
   const initials = profile.name.split(' ').map((s) => s[0]).join('')
   const from = q ? 'search' : cat ? 'category' : 'feed'
@@ -58,6 +60,15 @@ export default function Home() {
       <section key="recommended">
         <h3 className="section-title">{t('recommendedForYou')}</h3>
         <div className="grid grid-6">{top.map((x) => <ProductCard key={x.id} p={x} from="recommended" />)}</div>
+      </section>
+    ),
+    lowreturn: keepers.length >= 4 && (
+      <section key="lowreturn" className="edit lowreturn">
+        <div className="edit-head">
+          <h3>✅ {t('lowReturnTitle')}</h3>
+          <small>{t('lowReturnSub')}</small>
+        </div>
+        <div className="edit-strip">{keepers.map((x) => <ProductCard key={x.id} p={x} from="lowreturn" />)}</div>
       </section>
     ),
     edits: edits.filter((e) => e.items.length >= 4).map((e) => (
@@ -86,7 +97,12 @@ export default function Home() {
       </section>
     ),
   }
-  const order = p?.layout?.sectionOrder?.length ? p.layout.sectionOrder : DEFAULT_ORDER
+  const saved = p?.layout?.sectionOrder?.length ? p.layout.sectionOrder : SECTIONS
+  // sections added after a user's preferences were saved still show, in their default slot
+  const order = SECTIONS.filter((s) => !saved.includes(s)).reduce((o, s) => {
+    const i = o.indexOf(SECTIONS[SECTIONS.indexOf(s) - 1])
+    return [...o.slice(0, i + 1), s, ...o.slice(i + 1)]
+  }, saved)
 
   return (
     <main className="page">

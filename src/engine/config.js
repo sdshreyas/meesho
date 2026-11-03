@@ -57,3 +57,6 @@ export const COMPLEMENTS = {
 
 // Diwali 2026 is on 8 November
 export const FESTIVAL = { name: 'Diwali', date: '2026-11-08', uplift: 1.3 }
+
+// Products most buyers keep: get a "Low return rate" tag and a small ranking lift
+export const LOW_RETURN_PCT = 10

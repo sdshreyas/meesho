@@ -26,7 +26,7 @@ function write(key, value) {
   }
 }
 
-export const SECTIONS = ['reengage', 'recommended', 'edits', 'bundles', 'grid']
+export const SECTIONS = ['reengage', 'recommended', 'lowreturn', 'edits', 'bundles', 'grid']
 
 /** Starting preferences for a user = their persona profile. */
 export function defaultPrefs(profile) {

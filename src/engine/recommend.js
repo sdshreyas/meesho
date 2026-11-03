@@ -1,6 +1,6 @@
 // Persona-aware recommendation engine. Every score is a sum of explainable
 // signals, and the top signals become the "Why this?" reasons on each card.
-import { BUNDLE_DISCOUNT_PCT, COMPLEMENTS } from './config.js'
+import { BUNDLE_DISCOUNT_PCT, COMPLEMENTS, LOW_RETURN_PCT } from './config.js'
 
 const popularity = (p) => ((p.rating / 5) * Math.log10(p.ratingCount)) / 4
 
@@ -40,6 +40,11 @@ export function scoreProduct(p, persona, ctx = {}, byId = {}) {
   if (hits.length) add('r_tag_' + hits[0], hits.length * 0.6 + 0.1)
 
   score += popularity(p)
+  // fewer returns = lower RTO cost and happier buyers, so keepers rank a little higher
+  if (p.returnRate <= LOW_RETURN_PCT) {
+    score += 0.6
+    add('r_lowreturn', 0.95)
+  }
   if (p.tags.includes('trending')) score += 0.2
 
   const histSubs = (persona.pastPurchases ?? []).map((id) => byId[id]?.subcategory)

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { inr, useApp } from '../store.jsx'
-import { FREE_DELIVERY_THRESHOLD } from '../engine/config.js'
+import { FREE_DELIVERY_THRESHOLD, LOW_RETURN_PCT } from '../engine/config.js'
 
 export const img = (path) => import.meta.env.BASE_URL + path
 
@@ -14,12 +14,23 @@ export function Rating({ p }) {
   )
 }
 
+/** Green trust tag for products most buyers keep (low return rate). */
+export function LowReturn({ p, big }) {
+  const { t } = useApp()
+  if (!(p.returnRate <= LOW_RETURN_PCT)) return null
+  return (
+    <span className={'chip-keep' + (big ? ' big' : '')} title={t('lowReturnHint', { pct: p.returnRate })}>
+      ✅ {t('lowReturn')} · {t('keepPct', { pct: 100 - p.returnRate })}
+    </span>
+  )
+}
+
 export function Reasons({ reasons }) {
   const { t, profile } = useApp()
   if (!reasons?.length) return null
   return (
     <div className="reasons" title={t('whyThis')}>
-      {reasons.map((r) => (
+      {reasons.filter((r) => r !== 'r_lowreturn').map((r) => (
         <span key={r} className={'reason' + (r === 'r_gap' || r === 'r_cart' ? ' hot' : '')}>✦ {t(r, { city: profile.city })}</span>
       ))}
     </div>
@@ -27,7 +38,7 @@ export function Reasons({ reasons }) {
 }
 
 export default function ProductCard({ p, onAdd, compact, from = 'feed', query }) {
-  const { t, tx, wishlist, toggleWish } = useApp()
+  const { t, tx, wishlist, toggleWish, nudges } = useApp()
   const off = Math.round((1 - p.price / p.mrp) * 100)
   const wished = wishlist.includes(p.id)
   return (
@@ -47,6 +58,7 @@ export default function ProductCard({ p, onAdd, compact, from = 'feed', query })
             <span className="off">{t('off_pct', { pct: off })}</span>
           </div>
           {p.price >= FREE_DELIVERY_THRESHOLD && <span className="chip-free">{t('freeDelivery')}</span>}
+          {nudges && <LowReturn p={p} />}
           <Rating p={p} />
           {!compact && <Reasons reasons={p.reasons} />}
         </div>
