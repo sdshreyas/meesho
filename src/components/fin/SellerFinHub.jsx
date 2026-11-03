@@ -11,14 +11,13 @@ import { ConsentCenter, DispatchShield, FinSahayak, Policies, inr } from './FinP
 export default function SellerFinHub({ sellerId }) {
   const { t } = useApp()
   const { data: u, reload } = useFetch(() => api.finance.user(sellerId), [sellerId])
-  const [amount, setAmount] = useState(null)
   const [tenure, setTenure] = useState(6)
   const [adBoost, setAdBoost] = useState(false)
   const [flow, setFlow] = useState(false)
   if (!u) return <div className="loading">…</div>
   const product = LOAN_PRODUCTS.seller_wc
   const limit = u.limits.seller_wc
-  const amt = Math.min(Math.max(amount === null ? Math.min(limit, 50000) : +amount, product.min), limit)
+  const amt = limit // pre-approved amount from the Trust Score — not chosen by Meesho
   const live = u.loans.filter((l) => l.status !== 'cancelled')
 
   return (
@@ -35,12 +34,9 @@ export default function SellerFinHub({ sellerId }) {
         <div className="box fin">
           <b>🏦 Pre-approved working capital</b>
           <small className="muted">From partner banks & NBFCs, based on your Trust Score {u.score}. Repaid automatically from your weekly Meesho payouts — no big EMI shock.</small>
-          <div className="big-num">{limit ? `Up to ${inr(limit)}` : 'Not eligible yet'}</div>
+          <div className="big-num">{limit ? inr(limit) : 'Not eligible yet'}</div>
           {limit > 0 && (
             <>
-              <label className="slider-label">Loan amount (₹{product.min.toLocaleString('en-IN')} – {limit.toLocaleString('en-IN')})
-                <input type="number" min={product.min} max={limit} step={1000} value={amount ?? amt} onChange={(e) => setAmount(e.target.value)} onBlur={() => setAmount(amt)} />
-              </label>
               <div className="seg">
                 {product.tenures.map((m) => <button key={m} className={tenure === m ? 'sel' : ''} onClick={() => setTenure(m)}>{m} months</button>)}
               </div>

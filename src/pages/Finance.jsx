@@ -143,10 +143,9 @@ function LoanDesk({ d, reload }) {
   const product = d.products[productKey] ?? d.products[u.products[0]]
   const pk = u.products.includes(productKey) ? productKey : u.products[0]
   const limit = u.limits[pk] || 0
-  const [amount, setAmount] = useState(0)
   const [tenure, setTenure] = useState(product.tenures[1] ?? product.tenures[0])
   const [flow, setFlow] = useState(false)
-  const amt = Math.min(Math.max(+amount || Math.round(limit / 2 / 500) * 500, product.min), limit || product.min)
+  const amt = limit // the amount is set by the Trust Score, not chosen by Meesho
   const ten = product.tenures.includes(tenure) ? tenure : product.tenures[0]
   const cancel = async (id) => {
     await api.finance.cancelLoan(id)
@@ -158,17 +157,17 @@ function LoanDesk({ d, reload }) {
         <b>💸 Loan desk — share data, compare lenders, disburse</b>
         <div className="form-row batch-form">
           <label>Borrower
-            <select value={uid} onChange={(e) => { setUid(e.target.value); setAmount(0); setProductKey(borrowers.find((x) => x.id === e.target.value).products[0]) }}>
+            <select value={uid} onChange={(e) => { setUid(e.target.value); setProductKey(borrowers.find((x) => x.id === e.target.value).products[0]) }}>
               {borrowers.map((x) => <option key={x.id} value={x.id}>{x.name} · {x.role} · {x.score}</option>)}
             </select>
           </label>
           <label>Product
-            <select value={pk} onChange={(e) => { setProductKey(e.target.value); setAmount(0) }}>
+            <select value={pk} onChange={(e) => setProductKey(e.target.value)}>
               {u.products.map((p) => <option key={p} value={p}>{d.products[p].label}</option>)}
             </select>
           </label>
-          <label>Amount (₹)
-            <input type="number" min={product.min} max={Math.max(product.min, limit)} step={500} value={amount === 0 ? amt : amount} disabled={!limit} onChange={(e) => setAmount(e.target.value)} onBlur={() => setAmount(amt)} />
+          <label>Pre-approved amount
+            <b className="preapproved">{limit ? inr(limit) : 'Not eligible yet'}</b>
           </label>
           <label>Tenure
             <select value={ten} onChange={(e) => setTenure(+e.target.value)}>
@@ -177,7 +176,7 @@ function LoanDesk({ d, reload }) {
           </label>
           <label>&nbsp;<button className="btn-primary" disabled={!limit} onClick={() => setFlow(true)}>Get lender offers</button></label>
         </div>
-        <small className="muted">Trust Score {u.score} ({u.band.label}) · {limit ? `${inr(product.min)} – ${inr(limit)}` : 'not eligible yet'} · repayment: {product.repay}</small>
+        <small className="muted">Trust Score {u.score} ({u.band.label}) · amount set automatically from the Trust Score · repayment: {product.repay}</small>
       </div>
       {flow && <LoanFlow userId={u.id} productKey={pk} amount={amt} tenure={ten} onClose={() => { setFlow(false); reload() }} onDone={reload} />}
 
