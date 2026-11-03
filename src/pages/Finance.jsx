@@ -4,14 +4,13 @@ import { api } from '../api.js'
 import { useFetch } from '../useFetch.js'
 import { PARTNER_TYPES } from '../finance/data.js'
 import { ScoreFactors, ScoreGauge } from '../components/fin/Score.jsx'
-import LoanFlow from '../components/fin/LoanFlow.jsx'
-import { ConsentCenter, Policies, inr, when } from '../components/fin/FinParts.jsx'
+import { inr, when } from '../components/fin/FinParts.jsx'
 
 const TABS = [
   ['overview', '🏠 Overview'],
   ['partners', '🤝 Partners'],
   ['scores', '📊 Trust Scores'],
-  ['loans', '💸 Loan desk'],
+  ['loans', '💸 Loan book'],
   ['insurance', '🛡 Insurance'],
   ['consents', '🔒 Consents (DPDP)'],
   ['board', '📈 Board & escrow'],
@@ -37,7 +36,7 @@ function Overview({ d, go }) {
           {[
             ['📊', 'Meesho & Valmo data', 'Orders, Valmo scans, returns, COD, ads'],
             ['🧮', 'Trust Score /900', 'Explainable factors, recalculated daily'],
-            ['🔒', 'DPDP consent', 'User picks lenders & data — per purpose'],
+            ['🔒', 'DPDP consent', 'Customer picks lenders & data in their app'],
             ['🏦', 'Partner lender / insurer', 'Underwrites, prices, issues KFS'],
             ['💸', 'Direct disbursal', 'Lender → user bank account'],
             ['🔁', 'Escrow sweep', 'Repaid from weekly payouts'],
@@ -45,9 +44,9 @@ function Overview({ d, go }) {
             <div key={t} className="flow-step"><span className="flow-icon">{i}</span><b>{t}</b><small>{x}</small>{n < 5 && <i className="flow-arrow">→</i>}</div>
           ))}
         </div>
-        <p className="muted">Meesho is the Lending Service Provider and Corporate Insurance Agent — it never lends from its own balance sheet, never holds loan money, and earns a service fee from partners.</p>
+        <p className="muted">Meesho is the Lending Service Provider and Corporate Insurance Agent — it never lends from its own balance sheet, never holds loan money, and earns a service fee from partners. This dashboard only monitors: customers choose, partners lend and insure.</p>
         <div className="row-gap">
-          <button className="btn-primary sm" onClick={() => go('loans')}>Open the loan desk →</button>
+          <button className="btn-primary sm" onClick={() => go('loans')}>View the loan book →</button>
           <button className="btn-outline sm" onClick={() => go('scores')}>See Trust Scores</button>
         </div>
       </div>
@@ -135,86 +134,133 @@ function Scores({ d }) {
   )
 }
 
-function LoanDesk({ d, reload }) {
-  const borrowers = d.users.filter((u) => u.products.length)
-  const [uid, setUid] = useState(borrowers.find((u) => u.kind === 'seller')?.id ?? borrowers[0].id)
-  const u = borrowers.find((x) => x.id === uid)
-  const [productKey, setProductKey] = useState(u.products[0])
-  const product = d.products[productKey] ?? d.products[u.products[0]]
-  const pk = u.products.includes(productKey) ? productKey : u.products[0]
-  const limit = u.limits[pk] || 0
-  const [tenure, setTenure] = useState(product.tenures[1] ?? product.tenures[0])
-  const [flow, setFlow] = useState(false)
-  const amt = limit // the amount is set by the Trust Score, not chosen by Meesho
-  const ten = product.tenures.includes(tenure) ? tenure : product.tenures[0]
-  const cancel = async (id) => {
-    await api.finance.cancelLoan(id)
-    reload()
+/** Horizontal bar list for "share by X" analytics. */
+function Bars({ rows, fmt = inr }) {
+  const max = Math.max(1, ...rows.map((r) => r.value))
+  return (
+    <div className="mbars">
+      {rows.map((r) => (
+        <div key={r.label} className="mbar">
+          <span className="mbar-label">{r.label}</span>
+          <div className="mbar-track"><div style={{ width: `${(r.value / max) * 100}%`, background: r.color }} /></div>
+          <b>{fmt(r.value)}</b>
+          {r.note && <small className="muted">{r.note}</small>}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+const groupSum = (list, key, val) => {
+  const m = {}
+  for (const x of list) {
+    const k = typeof key === 'function' ? key(x) : x[key]
+    m[k] = m[k] ?? { label: k, value: 0, n: 0 }
+    m[k].value += val(x)
+    m[k].n += 1
   }
+  return Object.values(m).sort((a, b) => b.value - a.value)
+}
+
+const MONITOR = 'Monitoring only — customers choose and sign in their own Meesho / Valmo app; partners lend and insure. FinHub cannot disburse, opt in, cancel or withdraw on anyone’s behalf.'
+
+/** Loan book: read-only analytics of loans customers have already taken with partner lenders. */
+function LoanBook({ d }) {
+  const kindOf = Object.fromEntries(d.users.map((u) => [u.id, KIND[u.kind] ?? u.kind]))
+  const colorOf = Object.fromEntries(d.partners.map((p) => [p.name, p.color]))
+  const live = d.loans.filter((l) => l.status !== 'cancelled')
+  const book = live.reduce((s, l) => s + l.principal, 0)
+  const monthly = live.reduce((s, l) => s + (d.products[l.productKey]?.days ? 0 : l.emi), 0)
+  const avgApr = live.length ? live.reduce((s, l) => s + l.apr * l.principal, 0) / Math.max(1, book) : 0
+  const fees = live.reduce((s, l) => s + l.meeshoFee, 0)
+  const cooling = d.loans.filter((l) => l.status === 'cooling-off').length
+  const cancelled = d.loans.filter((l) => l.status === 'cancelled').length
   return (
     <div className="ops-stack">
-      <div className="box">
-        <b>💸 Loan desk — share data, compare lenders, disburse</b>
-        <div className="form-row batch-form">
-          <label>Borrower
-            <select value={uid} onChange={(e) => { setUid(e.target.value); setProductKey(borrowers.find((x) => x.id === e.target.value).products[0]) }}>
-              {borrowers.map((x) => <option key={x.id} value={x.id}>{x.name} · {x.role} · {x.score}</option>)}
-            </select>
-          </label>
-          <label>Product
-            <select value={pk} onChange={(e) => setProductKey(e.target.value)}>
-              {u.products.map((p) => <option key={p} value={p}>{d.products[p].label}</option>)}
-            </select>
-          </label>
-          <label>Pre-approved amount
-            <b className="preapproved">{limit ? inr(limit) : 'Not eligible yet'}</b>
-          </label>
-          <label>Tenure
-            <select value={ten} onChange={(e) => setTenure(+e.target.value)}>
-              {product.tenures.map((t) => <option key={t} value={t}>{t} {product.days ? 'days' : 'months'}</option>)}
-            </select>
-          </label>
-          <label>&nbsp;<button className="btn-primary" disabled={!limit} onClick={() => setFlow(true)}>Get lender offers</button></label>
-        </div>
-        <small className="muted">Trust Score {u.score} ({u.band.label}) · amount set automatically from the Trust Score · repayment: {product.repay}</small>
+      <div className="monitor-note">👁 {MONITOR}</div>
+      <div className="kpis">
+        <div className="kpi purple"><small>Live loan book</small><b>{crore(book)}</b><small className="kpi-sub">{live.length} loans via partners</small></div>
+        <div className="kpi"><small>Monthly repayments due</small><b>{inr(monthly)}</b><small className="kpi-sub">swept from payouts / earnings</small></div>
+        <div className="kpi"><small>Weighted average APR</small><b>{avgApr.toFixed(1)}%</b></div>
+        <div className="kpi green"><small>Meesho service fees</small><b>{inr(fees)}</b><small className="kpi-sub">paid by lenders</small></div>
+        <div className="kpi amber"><small>In 3-day cooling-off</small><b>{cooling}</b><small className="kpi-sub">{cancelled} cancelled by customers</small></div>
       </div>
-      {flow && <LoanFlow userId={u.id} productKey={pk} amount={amt} tenure={ten} onClose={() => { setFlow(false); reload() }} onDone={reload} />}
-
+      <div className="fin-cols">
+        <div className="box"><b>By lender</b><Bars rows={groupSum(live, 'partnerName', (l) => l.principal).map((r) => ({ ...r, color: colorOf[r.label], note: `${r.n} loans` }))} fmt={crore} /></div>
+        <div className="box"><b>By product</b><Bars rows={groupSum(live, 'product', (l) => l.principal).map((r) => ({ ...r, note: `${r.n} loans` }))} fmt={crore} /></div>
+        <div className="box"><b>By customer type</b><Bars rows={groupSum(live, (l) => kindOf[l.userId], (l) => l.principal).map((r) => ({ ...r, note: `${r.n} loans` }))} fmt={crore} /></div>
+      </div>
       <div className="box">
-        <b>📒 Loan book</b>
+        <b>📒 Loans chosen by customers</b>
         <div className="table-wrap">
           <table className="sku-table">
-            <thead><tr><th>Loan</th><th>Borrower</th><th>Product</th><th>Lender</th><th>Amount</th><th>Rate / APR</th><th>Instalment</th><th>Meesho fee</th><th>Consent</th><th>Status</th><th /></tr></thead>
+            <thead><tr><th>Loan</th><th>Customer</th><th>Product</th><th>Lender chosen</th><th>Amount</th><th>Rate / APR</th><th>Repayment</th><th>Meesho fee</th><th>Consent</th><th>Status</th></tr></thead>
             <tbody>
               {d.loans.map((l) => (
                 <tr key={l.id}>
                   <td><code>{l.id}</code><small className="muted block">{when(l.disbursedAt)}</small></td>
-                  <td>{l.userName}</td>
+                  <td>{l.userName}<small className="muted block">{kindOf[l.userId]}</small></td>
                   <td>{l.product}</td>
                   <td>{l.partnerName}</td>
                   <td>{inr(l.principal)}</td>
                   <td>{l.rate}% / {l.apr}%</td>
-                  <td>{inr(l.emi)} × {l.tenure}</td>
+                  <td>{inr(l.emi)} × {l.tenure}{d.products[l.productKey]?.days ? ' days' : ''}</td>
                   <td>{inr(l.meeshoFee)}</td>
                   <td><code>{l.consentId}</code></td>
                   <td><span className={'pill ' + (l.status === 'active' ? 'green' : l.status === 'cooling-off' ? 'amber' : '')}>{l.status}{l.status === 'cooling-off' ? ` · ${l.coolingHoursLeft}h` : ''}</span></td>
-                  <td>{l.status === 'cooling-off' && <button className="btn-mini" onClick={() => cancel(l.id)}>Cancel</button>}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-          {!d.loans.length && <p className="muted">No loans yet — pick a borrower above.</p>}
+          {!d.loans.length && <p className="muted">No customer has taken a loan yet.</p>}
         </div>
       </div>
     </div>
   )
 }
 
-function Insurance({ d, reload }) {
+/** Insurance: read-only view of covers customers have opted into, default crew covers and claims. */
+function Insurance({ d }) {
   const sellers = d.users.filter((u) => u.kind === 'seller')
   const crew = d.users.filter((u) => ['pilot', 'captain', 'driver'].includes(u.kind))
+  const opted = sellers.flatMap((u) => u.policies.filter((p) => p.on).map((p) => ({ ...p, user: u })))
+  const crewCovers = crew.flatMap((u) => u.policies.filter((p) => p.on).map((p) => ({ ...p, user: u })))
+  const paid = d.claims.reduce((s, c) => s + c.amount, 0)
+  const offered = sellers.reduce((s, u) => s + u.policies.length, 0)
   return (
     <div className="ops-stack">
+      <div className="monitor-note">👁 {MONITOR}</div>
+      <div className="kpis">
+        <div className="kpi purple"><small>Seller covers opted in</small><b>{opted.length}</b><small className="kpi-sub">of {offered} offered · {Math.round((opted.length / Math.max(1, offered)) * 100)}% uptake</small></div>
+        <div className="kpi"><small>Crew covers (default)</small><b>{crewCovers.length}</b><small className="kpi-sub">{crew.length} Valmo crew insured</small></div>
+        <div className="kpi green"><small>Claims auto-paid</small><b>{inr(paid)}</b><small className="kpi-sub">{d.claims.length} claims · 0 documents</small></div>
+        <div className="kpi"><small>Insurers</small><b>{new Set([...opted, ...crewCovers].map((p) => p.insurerName)).size}</b></div>
+      </div>
+      <div className="fin-cols">
+        <div className="box"><b>Opted-in covers by product</b><Bars rows={groupSum(opted, 'label', () => 1)} fmt={(n) => n} /></div>
+        <div className="box"><b>All covers by insurer</b><Bars rows={groupSum([...opted, ...crewCovers], 'insurerName', () => 1)} fmt={(n) => n} /></div>
+      </div>
+      <div className="box">
+        <b>🏪 Seller covers — chosen by the seller</b>
+        <div className="table-wrap">
+          <table className="sku-table">
+            <thead><tr><th>Seller</th><th>Cover</th><th>Insurer</th><th>Premium</th><th>Opted in</th><th>Status</th></tr></thead>
+            <tbody>
+              {opted.map((p) => (
+                <tr key={p.user.id + p.key}>
+                  <td><b>{p.user.name}</b></td>
+                  <td>{p.label}<small className="muted block">{p.cover}</small></td>
+                  <td>{p.insurerName}</td>
+                  <td>₹{p.price} {p.unit}</td>
+                  <td>{p.since ? when(p.since) : '—'}</td>
+                  <td><span className="pill green">Active</span></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {!opted.length && <p className="muted">No seller has opted into a cover yet.</p>}
+        </div>
+      </div>
       <div className="box">
         <b>🛵 Valmo crew — covered by default</b>
         <small className="muted">Every Valmo Pilot, Captain and line-haul driver is insured from day one; Valmo pays the premium.</small>
@@ -234,12 +280,6 @@ function Insurance({ d, reload }) {
           </table>
         </div>
       </div>
-      {sellers.map((u) => (
-        <div key={u.id} className="box">
-          <b>🏪 {u.name} — seller insurance (opt-in)</b>
-          <Policies user={u} onChange={reload} />
-        </div>
-      ))}
       <div className="box">
         <b>⚡ Zero-paperwork claims</b>
         <table className="sku-table">
@@ -248,7 +288,57 @@ function Insurance({ d, reload }) {
             {d.claims.map((c) => <tr key={c.id}><td><code>{c.id}</code></td><td>{c.orderId} · {c.item}</td><td>{c.trigger}</td><td>{inr(c.amount)}</td><td>{when(c.at)}</td></tr>)}
           </tbody>
         </table>
-        {!d.claims.length && <p className="muted">No claims yet — simulate a hub damage scan from a seller's dispatch list.</p>}
+        {!d.claims.length && <p className="muted">No claims yet.</p>}
+      </div>
+    </div>
+  )
+}
+
+/** DPDP consents: read-only list of active consent artefacts plus consent analytics. */
+function Consents({ d }) {
+  const now = Date.now()
+  const active = d.consents.filter((c) => !c.withdrawnAt && c.expiresAt > now).sort((a, b) => b.givenAt - a.givenAt)
+  const withdrawn = d.consents.filter((c) => c.withdrawnAt).length
+  const nameOf = Object.fromEntries(d.users.map((u) => [u.id, u.name]))
+  const soon = active.filter((c) => c.expiresAt - now < 30 * 86400000).length
+  return (
+    <div className="ops-stack">
+      <div className="monitor-note">👁 Monitoring only — consents are given and withdrawn by the customer in their own app (“My consents”). FinHub sees the audit trail, never the controls.</div>
+      <div className="kpis">
+        <div className="kpi purple"><small>Active consents</small><b>{active.length}</b><small className="kpi-sub">{new Set(active.map((c) => c.userId)).size} customers</small></div>
+        <div className="kpi"><small>Partners receiving data</small><b>{new Set(active.map((c) => c.partnerId)).size}</b></div>
+        <div className="kpi"><small>Withdrawn by customers</small><b>{withdrawn}</b></div>
+        <div className="kpi amber"><small>Expiring in 30 days</small><b>{soon}</b><small className="kpi-sub">valid {d.dpdp.consentValidityDays} days · data kept {d.dpdp.retentionDays} days</small></div>
+      </div>
+      <div className="fin-cols">
+        <div className="box"><b>Active consents by partner</b><Bars rows={groupSum(active, 'partnerName', () => 1)} fmt={(n) => n} /></div>
+        <div className="box"><b>Active consents by purpose</b><Bars rows={groupSum(active, (c) => d.products[c.productKey]?.label ?? c.purpose, () => 1)} fmt={(n) => n} /></div>
+      </div>
+      <div className="box">
+        <b>🔒 Active consents (DPDP Act 2023)</b>
+        <div className="table-wrap">
+          <table className="sku-table">
+            <thead><tr><th>Consent ID</th><th>Customer</th><th>Shared with</th><th>Purpose</th><th>Data</th><th>Given</th><th>Valid till</th><th>Status</th></tr></thead>
+            <tbody>
+              {active.map((c) => (
+                <tr key={c.id}>
+                  <td><code>{c.id}</code></td>
+                  <td>{nameOf[c.userId] ?? c.userId}</td>
+                  <td>{c.partnerName}</td>
+                  <td>{c.purpose}</td>
+                  <td><small>{c.fields.join(', ')}</small></td>
+                  <td>{when(c.givenAt)}</td>
+                  <td>{new Date(c.expiresAt).toLocaleDateString('en-IN')}</td>
+                  <td><span className="pill green">Active</span></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {!active.length && <p className="muted">No active consents.</p>}
+        </div>
+        <div className="dpdp-terms">
+          <span>👁 Right to access & correct</span><span>🗑 Right to erasure</span><span>📮 DPO: {d.dpdp.dpo.email}</span><span>⚖ Grievance: {d.dpdp.grievance.email}</span>
+        </div>
       </div>
     </div>
   )
@@ -316,9 +406,9 @@ function Board() {
 const RULES = [
   ['RBI — Digital Lending', [
     ['Loan money never passes through Meesho', 'Disbursal goes lender → borrower bank (UTR shown); repayments go to the lender via escrow.'],
-    ['Multi-lender transparency', 'Loan desk shows every eligible lender side by side, cheapest APR first.'],
+    ['Multi-lender transparency', 'The customer’s loan screen shows every eligible lender side by side, cheapest APR first.'],
     ['Key Fact Statement before signing', 'Full KFS with APR, fees, every instalment, recovery & grievance — must be read to proceed.'],
-    ['3-day cooling-off', 'Cancel without penalty from the success screen and the loan book.'],
+    ['3-day cooling-off', 'Customers cancel without penalty from their own app; FinHub tracks cooling-off status.'],
     ['No fees charged by the LSP to borrowers', 'Meesho’s fee is paid by the lender and disclosed in the KFS.'],
     ['Default-loss guarantee capped at 5%', 'Board simulator models FLDG at exactly 5% of the book.'],
   ]],
@@ -360,15 +450,15 @@ function Rules() {
 export default function Finance() {
   const [params, setParams] = useSearchParams()
   const tab = params.get('tab') ?? 'overview'
-  const { data: d, reload } = useFetch(() => api.finance.overview(), [])
+  const { data: d } = useFetch(() => api.finance.overview(), [])
   const go = (k) => setParams({ tab: k })
   const view = useMemo(() => {
     if (!d) return null
     if (tab === 'partners') return <Partners d={d} />
     if (tab === 'scores') return <Scores d={d} />
-    if (tab === 'loans') return <LoanDesk d={d} reload={reload} />
-    if (tab === 'insurance') return <Insurance d={d} reload={reload} />
-    if (tab === 'consents') return <ConsentCenter consents={[...d.consents].reverse()} dpdp={d.dpdp} onChange={reload} showUser />
+    if (tab === 'loans') return <LoanBook d={d} />
+    if (tab === 'insurance') return <Insurance d={d} />
+    if (tab === 'consents') return <Consents d={d} />
     if (tab === 'board') return <Board />
     if (tab === 'rules') return <Rules />
     return <Overview d={d} go={go} />
@@ -378,7 +468,7 @@ export default function Finance() {
       <div className="ops-head">
         <div>
           <h2>Meesho FinHub</h2>
-          <small className="muted">Embedded credit & insurance through partner banks, NBFCs and insurers — Meesho as Lending Service Provider and Corporate Agent. DPDP-compliant consent on every data share.</small>
+          <small className="muted">Monitoring dashboard for embedded credit & insurance through partner banks, NBFCs and insurers — Meesho as Lending Service Provider and Corporate Agent. DPDP-compliant consent on every data share.</small>
         </div>
         <nav className="ops-tabs wrap">
           {TABS.map(([k, l]) => <button key={k} className={tab === k ? 'sel' : ''} onClick={() => go(k)}>{l}</button>)}

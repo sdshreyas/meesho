@@ -794,3 +794,13 @@ details summary { cursor: pointer; font-size: 13px; color: var(--brand); font-we
 .finhub .policy { flex-wrap: wrap; }
 @media (max-width: 1100px) { .finhub .fin-grid { grid-template-columns: minmax(0, 1fr); } }
 .nowrap { white-space: nowrap; }
+
+/* FinHub monitoring analytics */
+.monitor-note { background: var(--surface-2); border: 1px dashed var(--line); border-radius: var(--radius); padding: 10px 14px; font-size: 13px; color: var(--muted); }
+.fin-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+.mbars { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+.mbar { display: grid; grid-template-columns: minmax(90px, 1.2fr) 2fr auto; gap: 4px 10px; align-items: center; font-size: 13px; }
+.mbar-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mbar-track { height: 10px; background: var(--surface-2); border-radius: 6px; overflow: hidden; }
+.mbar-track div { height: 100%; background: var(--brand); border-radius: 6px; min-width: 4px; }
+.mbar small { grid-column: 1 / -1; margin-top: -4px; }

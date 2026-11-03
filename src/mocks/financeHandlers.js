@@ -53,6 +53,53 @@ function policiesFor(user) {
   })
 }
 
+// Demo history: what customers already chose in their own apps, so the Meesho
+// monitoring dashboard has data on a fresh browser. Added once per browser.
+function seed() {
+  if (st.seeded) return
+  const now = Date.now()
+  const picks = [
+    ['S1', 'seller_wc', 6, 38], ['S4', 'seller_wc', 9, 21], ['U4', 'reseller_micro', 6, 12],
+    ['U2', 'buyer_paylater', 30, 9], ['U5', 'buyer_paylater', 15, 4], ['U1', 'buyer_paylater', 15, 1],
+    ['C1', 'crew_ev', 18, 47], ['C3', 'captain_wc', 6, 26], ['C4', 'truck_topup', 6, 2],
+  ]
+  for (const [userId, productKey, tenure, daysAgo] of picks) {
+    const u = userById(userId)
+    const amount = u && limitFor(u, productKey)
+    const offer = amount && offersFor(u, productKey, amount, tenure)[0]
+    if (!offer) continue
+    const at = now - daysAgo * DAY - 3600000 * (daysAgo % 7)
+    const consent = {
+      id: 'CNS-' + at.toString(36).toUpperCase() + '-' + offer.partner.id.toUpperCase().slice(0, 4),
+      userId, partnerId: offer.partner.id, partnerName: offer.partner.name, productKey,
+      purpose: `Credit underwriting for ${LOAN_PRODUCTS[productKey].label}`,
+      fields: (DATA_FIELDS[productKey] ?? []).map(([k]) => k), language: 'en',
+      givenAt: at, expiresAt: at + DPDP.consentValidityDays * DAY, retentionDays: DPDP.retentionDays, withdrawnAt: null,
+    }
+    st.consents.push(consent)
+    st.loans.push({
+      id: 'LN' + at.toString().slice(-8), userId, userName: u.name, productKey, product: LOAN_PRODUCTS[productKey].label,
+      partnerId: offer.partner.id, partnerName: offer.partner.name, principal: offer.principal, rate: offer.rate, apr: offer.apr, tenure, emi: offer.emi,
+      net: offer.net, meeshoFee: offer.meeshoFee, consentId: consent.id, disbursedAt: at, coolingOffUntil: at + 3 * DAY, adBoost: null,
+      utr: 'UTR' + Math.floor(at / 7).toString().slice(-10),
+    })
+  }
+  const opted = [['S1', 'transit_shield', 40], ['S1', 'godown', 33], ['S4', 'hospicash', 18], ['S4', 'transit_shield', 11]]
+  for (const [userId, key, daysAgo] of opted) {
+    const at = now - daysAgo * DAY
+    ;(st.policies[userId] ??= {})[key] ??= { on: true, at, policyNo: 'POL' + at.toString().slice(-9) }
+  }
+  const claims = [['S1', 'MSH-87911', 'Banarasi Silk Saree', 899, 'Bhiwandi Sort Centre', 22], ['S4', 'MSH-87640', 'Ceramic Dinner Set', 649, 'Nagpur Valmo Base', 6]]
+  for (const [userId, orderId, item, value, hub, daysAgo] of claims) {
+    const at = now - daysAgo * DAY
+    st.claims.push({ id: 'CLM' + at.toString().slice(-8), userId, orderId, item, amount: Math.min(1000, value), hub, insurer: 'Acko General Insurance', at, trigger: `Damage flagged by barcode scan at ${hub}`, documents: 0 })
+  }
+  st.loans.sort((a, b) => b.disbursedAt - a.disbursedAt)
+  st.claims.sort((a, b) => b.at - a.at)
+  st.seeded = true
+  save()
+}
+
 const userCard = (u) => ({
   ...u, band: band(u.score),
   limits: Object.fromEntries(u.products.map((p) => [p, limitFor(u, p)])),
@@ -64,6 +111,7 @@ const userCard = (u) => ({
 export const financeHandlers = [
   http.get('*/api/finance/overview', async () => {
     await delay(120)
+    seed()
     const all = users().map(userCard)
     const loans = st.loans.map(loanView)
     const live = loans.filter((l) => l.status !== 'cancelled')
@@ -89,6 +137,7 @@ export const financeHandlers = [
 
   http.get('*/api/finance/users/:id', async ({ params }) => {
     await delay(80)
+    seed()
     const u = userById(params.id)
     if (!u) return HttpResponse.json({ error: 'unknown' }, { status: 404 })
     return HttpResponse.json({ ...userCard(u), fields: Object.fromEntries(u.products.map((p) => [p, DATA_FIELDS[p]])), dpdp: DPDP })
