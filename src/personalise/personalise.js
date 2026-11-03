@@ -72,7 +72,7 @@ export function buildPrompt(profile, behaviour, current) {
 
 // ---------------- Gemini ----------------
 
-async function pickModel(apiKey) {
+export async function pickModel(apiKey) {
   try {
     const cached = localStorage.getItem(MODEL_KEY)
     if (cached) return cached

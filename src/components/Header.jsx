@@ -14,13 +14,14 @@ export default function Header() {
   useEffect(() => setQ(params.get('q') ?? ''), [params])
   const isSeller = profile.type === 'seller'
   const isOps = profile.type === 'ops'
+  const isFin = profile.type === 'finance'
   const isBuyer = profile.type === 'buyer'
   const count = cart.reduce((s, l) => s + l.qty, 0)
 
   return (
     <header className="header">
       <div className="header-row">
-        <Link to={isOps ? '/ops' : isSeller ? '/seller' : '/'} className="logo" aria-label="meesho home">
+        <Link to={isFin ? '/finance' : isOps ? '/ops' : isSeller ? '/seller' : '/'} className="logo" aria-label="meesho home">
           meesho
         </Link>
         {isBuyer && (
@@ -38,13 +39,14 @@ export default function Header() {
         )}
         {isSeller && <div className="seller-badge">{t('sellerHub')}</div>}
         {isOps && <div className="seller-badge ops">🚚 Valmo Control Tower</div>}
+        {isFin && <div className="seller-badge fin">🏦 Meesho FinHub</div>}
 
         <div className="header-controls">
           <ThemeToggle />
           <div className="account">
             <span className="avatar sm">{profile.name.split(' ').map((w) => w[0]).join('')}</span>
             <span className="account-info">
-              <b>{isSeller || isOps ? profile.owner : profile.name}</b>
+              <b>{isSeller || isOps || isFin ? profile.owner : profile.name}</b>
               <small>{isSeller ? profile.name : tx(profile.segment)}</small>
             </span>
             <button className="logout" onClick={logout} title={t('logout')}>⎋ {t('logout')}</button>

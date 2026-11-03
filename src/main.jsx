@@ -4,11 +4,12 @@ import { setupWorker } from 'msw/browser'
 import { handlers } from './mocks/handlers.js'
 import { logisticsHandlers } from './mocks/logisticsHandlers.js'
 import { userHandlers } from './mocks/userHandlers.js'
+import { financeHandlers } from './mocks/financeHandlers.js'
 import './index.css'
 import App from './App.jsx'
 
 // Start the mock backend before the first API call.
-const worker = setupWorker(...handlers, ...logisticsHandlers, ...userHandlers)
+const worker = setupWorker(...handlers, ...logisticsHandlers, ...userHandlers, ...financeHandlers)
 await worker.start({
   serviceWorker: { url: import.meta.env.BASE_URL + 'mockServiceWorker.js' },
   onUnhandledRequest: 'bypass',

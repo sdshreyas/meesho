@@ -57,6 +57,10 @@ export default function Cart() {
   const [payment, setPayment] = useState(profile.payment === 'COD' ? 'COD' : 'UPI')
   const [plan, setPlan] = useState(null)
   const [placing, setPlacing] = useState(false)
+  const [plConsent, setPlConsent] = useState(false)
+  const { data: fin } = useFetch(() => api.finance.offers({ userId: profile.id, productKey: 'buyer_paylater', amount: 2500, tenure: 15 }), [profile.id])
+  const lender = fin?.offers[0]?.partner
+  const codPct = Math.round((profile.codAcceptance ?? 0.9) * 100)
   const key = JSON.stringify(cart)
   const { data: q } = useFetch(
     () => api.quote({ lines: cart, personaId: profile.id, payment, nudges }),
@@ -79,9 +83,14 @@ export default function Cart() {
     )
   }
 
-  const bnplPlanValid = payment !== 'BNPL' || q?.bnpl?.plans.find((p) => p.id === plan)?.eligible
+  const bnplPlanValid = payment !== 'BNPL' || (q?.bnpl?.plans.find((p) => p.id === plan)?.eligible && plConsent && lender)
   const place = async () => {
     setPlacing(true)
+    if (payment === 'BNPL' && lender) {
+      // DPDP consent for the Pay Later lender, then the credit is booked straight with the lender
+      await api.finance.consent({ userId: profile.id, productKey: 'buyer_paylater', partnerIds: [lender.id], fields: ['cod', 'orders', 'repay', 'kyc'], adult: true })
+      if (q.total >= 500) await api.finance.disburse({ userId: profile.id, productKey: 'buyer_paylater', partnerId: lender.id, amount: Math.min(q.total, fin.limit), tenure: 15 }).catch(() => null)
+    }
     const order = await api.placeOrder({ lines: cart, personaId: profile.id, payment, plan: payment === 'BNPL' ? plan : null, nudges })
     track('purchase', {
       orderId: order.id, total: order.total, payment, plan: payment === 'BNPL' ? plan : null,
@@ -139,14 +148,26 @@ export default function Cart() {
       <aside className="cart-side">
         <div className="box">
           <b>{t('paymentMethod')}</b>
-          {['COD', 'UPI', 'BNPL'].map((m) => (
-            <label key={m} className={'pay' + (payment === m ? ' sel' : '')}>
+          {fin?.limit > 0 && (
+            <div className="trusted-badge">🛡 {t('trustedShopper', { score: fin.user.score, cod: codPct, limit: fin.limit.toLocaleString('en-IN') })}</div>
+          )}
+          {['BNPL', 'UPI', 'COD'].map((m) => (
+            <label key={m} className={'pay' + (payment === m ? ' sel' : '') + (m === 'BNPL' ? ' recommended' : '')}>
               <input type="radio" name="pay" checked={payment === m} onChange={() => setPayment(m)} />
-              {t(m === 'COD' ? 'pay_cod' : m === 'UPI' ? 'pay_upi' : 'pay_bnpl')}
+              <span>
+                {t(m === 'COD' ? 'pay_cod' : m === 'UPI' ? 'pay_upi' : 'pay_bnpl')}{m === 'BNPL' && lender ? ` · ${lender.short}` : ''}
+                {m === 'BNPL' && <small className="block green">{t('payLaterSave', { amount: 20 })}</small>}
+              </span>
               {m === 'BNPL' && <em className="new">0%</em>}
             </label>
           ))}
           {payment === 'BNPL' && q?.bnpl && <Bnpl bnpl={q.bnpl} plan={plan} setPlan={setPlan} />}
+          {payment === 'BNPL' && lender && (
+            <label className="check pl-consent">
+              <input type="checkbox" checked={plConsent} onChange={(e) => setPlConsent(e.target.checked)} />
+              <span>🔒 {t('plConsent', { lender: lender.name })}</span>
+            </label>
+          )}
         </div>
 
         {q && (
@@ -159,6 +180,7 @@ export default function Cart() {
             {q.personalDiscount > 0 && <div className="pd green"><span>🎁 {t('personalOffer')} {q.offer.code} ({q.offer.pct}%)</span><span>−{inr(q.personalDiscount)}</span></div>}
             <div className="pd"><span>{t('deliveryFee')}</span><span>{q.deliveryFee ? inr(q.deliveryFee) : <em className="green">FREE</em>}</span></div>
             {q.codFee > 0 && <div className="pd"><span>{t('codFee')}</span><span>{inr(q.codFee)}</span></div>}
+            {q.payLaterDiscount > 0 && <div className="pd green"><span>💳 {t('payLaterDiscount')}</span><span>−{inr(q.payLaterDiscount)}</span></div>}
             <div className="pd total"><span>{t('orderTotal')}</span><span>{inr(q.total)}</span></div>
             {q.savings + q.mrpSavings > 0 && <div className="save-banner">{t('youSave', { amount: q.savings + q.mrpSavings })}</div>}
             <button className="btn-primary wide" disabled={placing || !bnplPlanValid} onClick={place}>{t('placeOrder')}</button>

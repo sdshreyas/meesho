@@ -46,6 +46,22 @@ Every login profile has **two databases** (`src/mocks/userdb.js`, stored in the 
 
 Preferences drive the feed ranking, bundles, personal offers in the cart and the home layout (`src/personalise/applyPrefs.js`). **📊 My data** shows both databases and exports a 14-sheet Excel workbook per user; Valmo Ops can view and export every buyer.
 
+## Meesho FinHub — embedded finance (log in via the 🏦 FinHub tab · 90000 00002 · OTP 123456)
+
+Meesho as **Lending Service Provider** and **IRDAI Corporate Agent** — partners lend and insure, Meesho never holds loan money and earns a service fee from partners.
+
+| Feature | Where |
+| --- | --- |
+| Partner banks, NBFCs, insurers & rails (illustrative), loan & insurance products, Valmo crew, DPDP settings | `src/finance/data.js` |
+| **Meesho Trust Score (300–900)** for buyers, resellers, sellers and Valmo crew — each factor shows its weight, points and the Meesho/Valmo data source that captures it; risk-based multi-lender offers; RBI Key Fact Statement | `src/finance/engine.js` |
+| FinSahayak advisor (Gemini with saved key, built-in answers otherwise) | `src/finance/advisor.js` |
+| API: overview, users, offers, consent, withdraw, loans, cancel, policies, claims, advisor | `src/mocks/financeHandlers.js` |
+| FinHub page: overview, partners, Trust Scores, loan desk & loan book, insurance & claims, consents, board revenue & escrow simulator, RBI/IRDAI/DPDP rules | `src/pages/Finance.jsx` |
+| Seller FinHub (score gauge, working capital + Ad-Credit booster, ₹2 Valmo Transit Shield with auto-claims, godown & hospital cash, FinSahayak, My consents) | `src/components/fin/` |
+| Buyer Pay Later at checkout (Trust Score badge, ₹20 COD-switch saving, DPDP consent), Valmo crew finance tab in the Control Tower | `src/pages/Cart.jsx`, `src/components/ops/CrewFinanceTab.jsx` |
+
+**DPDP Act 2023 compliance built into the flow:** clear notice (who, purpose, exact fields, recipients, retention, rights) before consent; one consent artefact per lender, nothing pre-selected; optional fields opt-in; 18+ confirmation; purpose-bound and time-bound consents with IDs and an audit trail linked to each loan; one-click withdrawal in "My consents"; DPO and grievance contacts.
+
 ## API (served in-browser by MSW)
 
 ```

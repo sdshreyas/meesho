@@ -10,6 +10,9 @@ export const BUYERS = [
     name: 'Priya Verma',
     segment: 'Budget Fashion Seeker',
     city: 'Lucknow', state: 'Uttar Pradesh', tier: 'Tier 2',
+    codAcceptance: 0.9,
+    monthsOnMeesho: 14,
+    monthlyIncome: 12000,
     lat: 26.8467, lng: 80.9462,
     language: 'hi',
     gender: 'women',
@@ -34,6 +37,9 @@ export const BUYERS = [
     name: 'Lakshmi Sundaram',
     segment: 'Value Homemaker',
     city: 'Coimbatore', state: 'Tamil Nadu', tier: 'Tier 2',
+    codAcceptance: 0.98,
+    monthsOnMeesho: 30,
+    monthlyIncome: 28000,
     lat: 11.0168, lng: 76.9558,
     language: 'ta',
     gender: 'women',
@@ -58,6 +64,9 @@ export const BUYERS = [
     name: 'Arjun Das',
     segment: 'Young Male Explorer',
     city: 'Siliguri', state: 'West Bengal', tier: 'Tier 3',
+    codAcceptance: 0.86,
+    monthsOnMeesho: 9,
+    monthlyIncome: 18000,
     lat: 26.7271, lng: 88.3953,
     language: 'bn',
     gender: 'men',
@@ -82,6 +91,10 @@ export const BUYERS = [
     name: 'Sunita Patel',
     segment: 'Home Reseller',
     city: 'Surat', state: 'Gujarat', tier: 'Tier 2',
+    codAcceptance: 0.97,
+    monthsOnMeesho: 26,
+    monthlyIncome: 24000,
+    resellerConversion: 0.21,
     lat: 21.1702, lng: 72.8311,
     language: 'gu',
     gender: 'women',
@@ -107,6 +120,9 @@ export const BUYERS = [
     name: 'Anjali Kulkarni',
     segment: 'Festive Occasion Shopper',
     city: 'Nashik', state: 'Maharashtra', tier: 'Tier 2',
+    codAcceptance: 0.95,
+    monthsOnMeesho: 20,
+    monthlyIncome: 32000,
     lat: 19.9975, lng: 73.7898,
     language: 'mr',
     gender: 'women',
@@ -135,6 +151,8 @@ export const SELLERS = [
     owner: 'Kavya Sharma',
     segment: 'Small Seller · Fashion & Jewellery',
     city: 'Jaipur', state: 'Rajasthan',
+    rtoRate: 0.068,
+    adRoas: 4.8,
     lat: 26.9124, lng: 75.7873,
     language: 'hi',
     tenureMonths: 26,
@@ -150,6 +168,8 @@ export const SELLERS = [
     owner: 'Ravi Kumar',
     segment: 'Small Seller · Home & Kitchen',
     city: 'Hyderabad', state: 'Telangana',
+    rtoRate: 0.09,
+    adRoas: 3.1,
     lat: 17.385, lng: 78.4867,
     language: 'te',
     tenureMonths: 11,
@@ -185,7 +205,23 @@ export const OPS = [
   },
 ]
 
-export const PROFILES = [...BUYERS, ...SELLERS, ...OPS]
+// Meesho FinHub — embedded finance partnerships desk
+export const FINANCE = [
+  {
+    id: 'F1',
+    phone: '9000000002',
+    type: 'finance',
+    name: 'Meesho FinHub',
+    owner: 'Neha Rao',
+    segment: 'Embedded Finance · Partnerships & Risk',
+    city: 'Bengaluru', state: 'Karnataka',
+    lat: 12.9716, lng: 77.5946,
+    language: 'en',
+    blurb: 'Partner banks, insurers, Trust Scores, loans and policies.',
+  },
+]
+
+export const PROFILES = [...BUYERS, ...SELLERS, ...OPS, ...FINANCE]
 
 // Every demo account logs in with this OTP
 export const DEMO_OTP = '123456'

@@ -5,6 +5,7 @@ import NetworkTab from '../components/ops/NetworkTab.jsx'
 import OptimizerTab from '../components/ops/OptimizerTab.jsx'
 import SimulatorTab from '../components/ops/SimulatorTab.jsx'
 import BatchTab from '../components/ops/BatchTab.jsx'
+import CrewFinanceTab from '../components/ops/CrewFinanceTab.jsx'
 import { num } from '../components/ops/common.jsx'
 
 const TABS = [
@@ -12,6 +13,7 @@ const TABS = [
   ['optimizer', '⚙️ Logistics optimiser'],
   ['batch', '📅 Batch analysis'],
   ['simulator', '🧪 New DC simulator'],
+  ['crew', '🛵 Crew finance'],
 ]
 
 /** Valmo Control Tower: logistics back office for Meesho leadership. */
@@ -43,6 +45,8 @@ export default function Ops() {
         <OptimizerTab network={network} />
       ) : tab === 'batch' ? (
         <BatchTab network={network} />
+      ) : tab === 'crew' ? (
+        <CrewFinanceTab />
       ) : tab === 'simulator' ? (
         <SimulatorTab network={network} />
       ) : (

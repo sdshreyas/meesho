@@ -5,6 +5,7 @@ import {
 } from './config.js'
 
 const pct = (x, p) => Math.round((x * p) / 100)
+export const PAY_LATER_SAVING = 20
 
 /**
  * lines: [{ productId, qty, bundleId? }]
@@ -58,7 +59,9 @@ export function quote(lines, products, persona, { nudges = true, payment = 'COD'
   const afterDiscounts = productTotal - bundleDiscount - packDiscount - multiItemDiscount - personalDiscount
   const deliveryFee = items.length && afterDiscounts < FREE_DELIVERY_THRESHOLD ? DELIVERY_FEE : 0
   const codFee = payment === 'COD' && items.length && afterDiscounts < COD_FREE_ABOVE ? COD_FEE : 0
-  const total = afterDiscounts + deliveryFee + codFee
+  // ₹20 for switching from Cash-on-Delivery to Pay Later (saves Valmo cash handling & RTO)
+  const payLaterDiscount = payment === 'BNPL' && items.length ? PAY_LATER_SAVING : 0
+  const total = afterDiscounts + deliveryFee + codFee - payLaterDiscount
   const savings = productTotal - afterDiscounts
   const mrpSavings = items.reduce((s, l) => s + (l.product.mrp - l.product.price) * l.qty, 0)
 
@@ -85,7 +88,7 @@ export function quote(lines, products, persona, { nudges = true, payment = 'COD'
   return {
     items: items.map((l) => ({ productId: l.productId, qty: l.qty, bundleId: l.bundleId, lineTotal: l.lineTotal, discount: l.discount ?? 0, packPct: l.packPct })),
     productTotal, bundleDiscount, packDiscount, multiItemDiscount, tierPct,
-    personalDiscount, offer: offer?.pct ? { pct: offer.pct, code: offer.code, reason: offer.reason, categories: offer.categories } : null,
+    personalDiscount, payLaterDiscount, offer: offer?.pct ? { pct: offer.pct, code: offer.code, reason: offer.reason, categories: offer.categories } : null,
     deliveryFee, codFee, total, savings, mrpSavings,
     nudges: nudgeList,
     gap,

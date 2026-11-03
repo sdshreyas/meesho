@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import { Area, Bar, CartesianGrid, ComposedChart, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { api } from '../api.js'
@@ -6,6 +5,7 @@ import { inr, useApp } from '../store.jsx'
 import { useFetch } from '../useFetch.js'
 import { img } from '../components/ProductCard.jsx'
 import AudioSummary from '../components/AudioSummary.jsx'
+import SellerFinHub from '../components/fin/SellerFinHub.jsx'
 
 const STATUS_CLS = { s_reorder: 'red', s_healthy: 'green', s_overstock: 'amber' }
 
@@ -20,24 +20,11 @@ function Kpi({ label, value, tone }) {
 
 export default function Seller() {
   const { profile, t, tx } = useApp()
-  const { data: d, reload } = useFetch(() => (profile.type === 'seller' ? api.sellerDashboard(profile.id) : Promise.resolve(null)), [profile.id])
-  const [busy, setBusy] = useState(null)
+  const { data: d } = useFetch(() => (profile.type === 'seller' ? api.sellerDashboard(profile.id) : Promise.resolve(null)), [profile.id])
   if (profile.type !== 'seller') return <Navigate to="/" replace />
   if (!d) return <main className="page"><div className="loading">…</div></main>
 
   const k = d.kpis
-  const insure = async (plan) => {
-    setBusy(plan)
-    await api.setInsurance(profile.id, plan, !d.enrolled[plan])
-    reload()
-    setBusy(null)
-  }
-  const apply = async (loan) => {
-    setBusy(loan)
-    await api.applyLoan(profile.id, loan)
-    reload()
-    setBusy(null)
-  }
   const skus = [...d.skus].sort((a, b) => a.daysCover - b.daysCover)
 
   return (
@@ -51,50 +38,7 @@ export default function Seller() {
 
       <div className="festive-alert">🪔 {t('festiveAlert', { days: d.daysToFestival, pct: d.festivalUplift })}</div>
 
-      <h3 className="section-title">💼 {t('financeTitle')}</h3>
-      <div className="seller-grid fin-grid">
-        <div className="box fin">
-          <b>🏦 {t('creditTitle')}</b>
-          <small className="muted">{t('creditSub')}</small>
-          <div className="big-num">{inr(d.credit.limit)}</div>
-          <ul className="factors">
-            {d.credit.factors.map((f) => (
-              <li key={f.key} className={f.good ? 'good' : 'bad'}>{f.good ? '✓' : '!'} {t(f.key, f.vars)}</li>
-            ))}
-          </ul>
-          {[
-            { id: 'loan_wc', vars: { amount: d.credit.limit.toLocaleString('en-IN'), rate: d.credit.rate } },
-            { id: 'loan_inv', vars: { amount: d.credit.restockCost.toLocaleString('en-IN') } },
-          ].map((l) => (
-            <div key={l.id} className="fin-row">
-              <div>
-                <b>{t(l.id)}</b>
-                <small>{t(l.id + '_d', l.vars)}</small>
-              </div>
-              <button className={d.loans[l.id] ? 'btn-done' : 'btn-primary'} disabled={!!d.loans[l.id] || busy === l.id} onClick={() => apply(l.id)}>
-                {d.loans[l.id] ? t('applied') : t('apply')}
-              </button>
-            </div>
-          ))}
-        </div>
-
-        <div className="box fin">
-          <b>🛡 {t('insureTitle')}</b>
-          <small className="muted">{t('insureSub', { amount: d.insurance.stockValue.toLocaleString('en-IN') })}</small>
-          {d.insurance.plans.map((p) => (
-            <div key={p.id} className="fin-row">
-              <div>
-                <b>{t(p.id)}</b>
-                <small>{t(p.id + '_d')}</small>
-                <em>{t(p.unit, { amount: p.amount.toLocaleString('en-IN') })}</em>
-              </div>
-              <button className={d.enrolled[p.id] ? 'btn-done' : 'btn-outline'} disabled={busy === p.id} onClick={() => insure(p.id)}>
-                {d.enrolled[p.id] ? t('enrolled') : t('enrol')}
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
+      <SellerFinHub sellerId={profile.id} />
 
       <AudioSummary lines={d.summary} />
 

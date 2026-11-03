@@ -13,6 +13,7 @@ import Seller from './pages/Seller.jsx'
 import Login from './pages/Login.jsx'
 import Ops from './pages/Ops.jsx'
 import Credits from './pages/Credits.jsx'
+import Finance from './pages/Finance.jsx'
 
 function Shell() {
   const { profile, session, t } = useApp()
@@ -22,12 +23,14 @@ function Shell() {
   }, [session, location.pathname, location.search])
   const seller = profile.type === 'seller'
   const ops = profile.type === 'ops'
+  const fin = profile.type === 'finance'
   if (!session) return <Login />
   return (
     <>
       <Header />
       <Routes key={profile.id}>
-        <Route path="/" element={ops ? <Navigate to="/ops" replace /> : seller ? <Navigate to="/seller" replace /> : <Home />} />
+        <Route path="/" element={fin ? <Navigate to="/finance" replace /> : ops ? <Navigate to="/ops" replace /> : seller ? <Navigate to="/seller" replace /> : <Home />} />
+        <Route path="/finance" element={fin ? <Finance /> : <Navigate to="/" replace />} />
         <Route path="/ops" element={ops ? <Ops /> : <Navigate to="/" replace />} />
         <Route path="/product/:id" element={<Product />} />
         <Route path="/cart" element={<Cart />} />

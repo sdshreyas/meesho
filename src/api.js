@@ -39,6 +39,18 @@ export const api = {
     data: (id) => req(`/users/${id}/data`),
     reset: (id) => req(`/users/${id}/reset`, { method: 'POST', body: {} }),
   },
+  finance: {
+    overview: () => req('/finance/overview'),
+    user: (id) => req(`/finance/users/${id}`),
+    offers: (body) => req('/finance/offers', { method: 'POST', body }),
+    consent: (body) => req('/finance/consent', { method: 'POST', body }),
+    withdraw: (id) => req(`/finance/consent/${id}/withdraw`, { method: 'POST', body: {} }),
+    disburse: (body) => req('/finance/loans', { method: 'POST', body }),
+    cancelLoan: (id) => req(`/finance/loans/${id}/cancel`, { method: 'POST', body: {} }),
+    policy: (body) => req('/finance/policies', { method: 'POST', body }),
+    claim: (body) => req('/finance/claims', { method: 'POST', body }),
+    advisor: (body) => req('/finance/advisor', { method: 'POST', body }),
+  },
   logistics: {
     network: () => req('/logistics/network'),
     forecast: (product) => req('/logistics/forecast?' + qs({ product })),

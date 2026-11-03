@@ -129,7 +129,7 @@ export default function Login() {
       const r = await api.verifyOtp(phone, role, code)
       const enter = () => {
         login(r.profileId, r.token)
-        navigate(role === 'seller' ? '/seller' : role === 'ops' ? '/ops' : '/', { replace: true })
+        navigate({ seller: '/seller', ops: '/ops', finance: '/finance' }[role] ?? '/', { replace: true })
       }
       setSms(null)
       if (role !== 'buyer') return enter()
@@ -156,6 +156,7 @@ export default function Login() {
     buyer: ['buyerPitch1', 'buyerPitch2', 'buyerPitch3'],
     seller: ['sellerPitch1', 'sellerPitch2', 'sellerPitch3'],
     ops: ['opsPitch1', 'opsPitch2', 'opsPitch3'],
+    finance: ['finPitch1', 'finPitch2', 'finPitch3'],
   }[role]
 
   return (
@@ -171,11 +172,11 @@ export default function Login() {
 
       <section className={'login-brand ' + role}>
         <div className="logo light">meesho</div>
-        <h1>{t({ buyer: 'loginBuyer', seller: 'loginSeller', ops: 'loginOps' }[role])}</h1>
+        <h1>{t({ buyer: 'loginBuyer', seller: 'loginSeller', ops: 'loginOps', finance: 'loginFinance' }[role])}</h1>
         <ul>
           {pitch.map((k) => <li key={k}>✓ {t(k)}</li>)}
         </ul>
-        <div className="brand-art" aria-hidden>{{ buyer: '🛍️👗👟💄', seller: '🏪📦📈🏦', ops: '🚚🗺️📊🏭' }[role]}</div>
+        <div className="brand-art" aria-hidden>{{ buyer: '🛍️👗👟💄', seller: '🏪📦📈🏦', ops: '🚚🗺️📊🏭', finance: '🏦🛡️📊🔒' }[role]}</div>
       </section>
 
       <section className="login-card">
@@ -189,6 +190,7 @@ export default function Login() {
           <button className={role === 'buyer' ? 'sel' : ''} onClick={() => switchRole('buyer')}>🛍️ {t('loginBuyer')}</button>
           <button className={role === 'seller' ? 'sel' : ''} onClick={() => switchRole('seller')}>🏪 {t('loginSeller')}</button>
           <button className={role === 'ops' ? 'sel' : ''} onClick={() => switchRole('ops')}>🚚 {t('loginOps')}</button>
+          <button className={role === 'finance' ? 'sel' : ''} onClick={() => switchRole('finance')}>🏦 {t('loginFinance')}</button>
         </div>
         <h2>{t('loginHeading')}</h2>
 
