@@ -41,9 +41,16 @@ export default function Home() {
         ...(styles.includes('western') ? [{ key: 'western', title: t('westernEdit'), sub: '', items: list.filter((x) => x.style === 'western' && x.gender === 'women').slice(0, 10) }] : []),
       ]
     : [{ key: 'mens', title: t('mensEdit'), sub: t('mensEditSub'), items: list.filter((x) => x.gender === 'men').slice(0, 10) }]
+  // top 6 always carries at least 2 low-return picks (slots 3 and 6) so every persona sees the trust tag
+  const keep = (x) => x.returnRate <= LOW_RETURN_PCT
   const top = nudges && home ? list.slice(0, 6) : []
-  const keepers = nudges && home ? list.filter((x) => x.returnRate <= LOW_RETURN_PCT).slice(0, 10) : []
-  const rest = nudges && home ? list.slice(6) : list
+  for (const slot of [5, 2]) {
+    if (top.filter(keep).length >= 2) break
+    const pick = list.find((x) => keep(x) && !top.includes(x))
+    if (pick && !keep(top[slot])) top[slot] = pick
+  }
+  const keepers = nudges && home ? list.filter((x) => keep(x) && !top.includes(x)).slice(0, 10) : []
+  const rest = nudges && home ? list.filter((x) => !top.includes(x)) : list
   const initials = profile.name.split(' ').map((s) => s[0]).join('')
   const from = q ? 'search' : cat ? 'category' : 'feed'
 
