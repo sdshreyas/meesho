@@ -500,7 +500,7 @@ details summary { cursor: pointer; font-size: 13px; color: var(--brand); font-we
 .model-notes b { color: var(--text); }
 .batch-form { grid-template-columns: 1fr 1fr 1.2fr 1fr auto; align-items: end; }
 .batch-form button { height: 36px; }
-.preapproved { display: flex; align-items: center; height: 36px; padding: 0 12px; border-radius: 8px; background: var(--green-50); color: var(--green); font-size: 16px; }
+.preapproved { display: flex; align-items: center; height: 36px; color: var(--green); font-size: 20px; font-weight: 700; user-select: text; }
 .bucket-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
 .bucket { display: grid; grid-template-columns: 10px 1fr; column-gap: 8px; border: 1px solid var(--line); border-radius: 8px; padding: 8px; font-size: 12px; }
 .bucket i { grid-row: span 3; width: 10px; border-radius: 3px; }

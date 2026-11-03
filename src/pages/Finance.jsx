@@ -256,7 +256,7 @@ function Insurance({ d, reload }) {
 
 function Board() {
   const [sellerUptake, setSellerUptake] = useState(4)
-  const [ticket, setTicket] = useState(60000)
+  const ticket = 60000 // average pre-approved seller loan — set by the Trust Score, not chosen
   const [payLater, setPayLater] = useState(12)
   const [shield, setShield] = useState(25)
   const [fldg, setFldg] = useState(false)
@@ -278,7 +278,7 @@ function Board() {
         <b>📈 Revenue simulator (monthly, at Meesho scale)</b>
         <div className="form-row batch-form">
           <label>Sellers taking a loan in 6 months: <b>{sellerUptake}%</b><input type="range" min="1" max="15" value={sellerUptake} onChange={(e) => setSellerUptake(+e.target.value)} /></label>
-          <label>Average seller loan: <b>{inr(ticket)}</b><input type="range" min="20000" max="200000" step="5000" value={ticket} onChange={(e) => setTicket(+e.target.value)} /></label>
+          <label>Average seller loan (pre-approved)<b className="preapproved">{inr(ticket)}</b></label>
           <label>Orders paid with Pay Later: <b>{payLater}%</b><input type="range" min="0" max="40" value={payLater} onChange={(e) => setPayLater(+e.target.value)} /></label>
           <label>Parcels with ₹2 shield: <b>{shield}%</b><input type="range" min="0" max="80" value={shield} onChange={(e) => setShield(+e.target.value)} /></label>
           <label className="check"><input type="checkbox" checked={fldg} onChange={(e) => setFldg(e.target.checked)} /> Offer 5% default-loss guarantee (FLDG)</label>
