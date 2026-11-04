@@ -3,6 +3,7 @@ import { api } from '../api.js'
 import { useApp } from '../store.jsx'
 import { useFetch } from '../useFetch.js'
 import { exportUserExcel } from '../tracking/exportExcel.js'
+import { ConsentCenter } from '../components/fin/FinParts.jsx'
 
 const pct = (x) => (x == null ? '—' : `${Math.round(x * 100)}%`)
 const top = (o, n = 6) => Object.entries(o ?? {}).sort((a, b) => b[1] - a[1]).slice(0, n)
@@ -34,6 +35,7 @@ export default function MyData() {
   const isOps = profile.type === 'ops'
   const [userId, setUserId] = useState(isOps ? 'U1' : profile.id)
   const { data, reload } = useFetch(() => api.users.data(userId), [userId])
+  const { data: fin, reload: reloadFin } = useFetch(() => api.finance.user(userId), [userId])
   const [busy, setBusy] = useState(null)
 
   if (!data) return <main className="page"><div className="loading">…</div></main>
@@ -90,6 +92,8 @@ export default function MyData() {
         <Kpi label="Orders" value={b.purchases.orders} sub={`AOV ₹${Math.round(b.purchases.aov)}`} />
         <Kpi label="Returns" value={b.returns.count} sub={`rate ${pct(b.returns.rate)}`} />
       </div>
+
+      {fin && <ConsentCenter consents={[...fin.consents].sort((x, y) => y.givenAt - x.givenAt)} dpdp={fin.dpdp} onChange={reloadFin} userName={fin.name} readOnly={isOps} />}
 
       <div className="seller-grid">
         <div className="box">

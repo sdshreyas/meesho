@@ -73,7 +73,7 @@ export default function SellerFinHub({ sellerId }) {
 
       <div className="seller-grid fin-grid">
         <FinSahayak userId={sellerId} name={u.owner ?? u.name} />
-        <ConsentCenter consents={[...u.consents].reverse()} dpdp={u.dpdp} onChange={reload} />
+        <ConsentCenter consents={[...u.consents].reverse()} dpdp={u.dpdp} onChange={reload} userName={u.name} />
       </div>
     </section>
   )

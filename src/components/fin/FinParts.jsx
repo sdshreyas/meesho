@@ -1,6 +1,7 @@
 // Smaller FinHub building blocks: insurance toggles, Valmo dispatch shield with
 // auto-claims, DPDP consent centre and the FinSahayak advisor chat.
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { api } from '../../api.js'
 import { useApp } from '../../store.jsx'
 import { partnerById } from '../../finance/data.js'
@@ -95,32 +96,55 @@ export function DispatchShield({ user, sellerId, onChange }) {
   )
 }
 
+// short tag for each shared data field
+const FIELD_LABEL = {
+  cod: 'COD acceptance', orders: 'Order history', repay: 'Repayment record', kyc: 'KYC', sales: 'Sales ledger',
+  dispatch: 'Valmo dispatch', returns: 'Returns & RTO', ads: 'Ads ROAS', tenure: 'Tenure', resale: 'Resale orders',
+  margin: 'Margin', earnings: 'Earnings', success: 'Delivery success', attendance: 'Attendance', handling: 'Airhub handling',
+  sla: 'Airhub SLA', trips: 'Line-haul trips',
+}
+
 /** DPDP: every consent artefact, with one-click withdrawal and the user's rights. */
-export function ConsentCenter({ consents, dpdp, onChange, showUser }) {
-  const withdraw = async (id) => {
-    await api.finance.withdraw(id)
-    onChange?.()
+export function ConsentCenter({ consents, dpdp, onChange, userName, readOnly }) {
+  const [busy, setBusy] = useState(null)
+  const [note, setNote] = useState(null)
+  useEffect(() => {
+    if (!note) return
+    const t = setTimeout(() => setNote(null), 6000)
+    return () => clearTimeout(t)
+  }, [note])
+  const withdraw = async (c) => {
+    setBusy(c.id)
+    await api.finance.withdraw(c.id)
+    await onChange?.()
+    setBusy(null)
+    setNote(c)
   }
   return (
-    <div className="box">
+    <div className="box consents-card">
       <b>🔒 My consents (DPDP Act 2023)</b>
       <small className="muted">Every data share is a separate, purpose-bound, time-bound consent you can withdraw in one click. Withdrawal stops future sharing; lenders must delete your data after the retention period.</small>
       <div className="table-wrap">
-        <table className="sku-table">
-          <thead><tr><th>Consent ID</th>{showUser && <th>User</th>}<th>Shared with</th><th>Purpose</th><th>Data</th><th>Given</th><th>Valid till</th><th>Status</th></tr></thead>
+        <table className="sku-table consent-table">
+          <thead><tr><th>Consent ID</th><th>User</th><th>Shared with</th><th>Purpose</th><th>Data</th><th>Given</th><th>Valid till</th><th>Status</th></tr></thead>
           <tbody>
             {consents.map((c) => {
               const active = !c.withdrawnAt && c.expiresAt > Date.now()
               return (
-                <tr key={c.id}>
+                <tr key={c.id} className={active ? '' : 'revoked'}>
                   <td><code>{c.id}</code></td>
-                  {showUser && <td>{c.userId}</td>}
+                  <td>{userName ?? c.userId}<small className="muted block">{c.userId}</small></td>
                   <td>{c.partnerName}</td>
                   <td>{c.purpose}</td>
-                  <td><small>{c.fields.join(', ')}</small></td>
+                  <td><div className="data-tags">{c.fields.map((f) => <span key={f} className="data-tag">{FIELD_LABEL[f] ?? f}</span>)}</div></td>
                   <td>{when(c.givenAt)}</td>
-                  <td>{new Date(c.expiresAt).toLocaleDateString('en-IN')}</td>
-                  <td className="nowrap">{active ? <><span className="pill green">Active</span> <button className="btn-mini" onClick={() => withdraw(c.id)}>Withdraw</button></> : <span className="pill">{c.withdrawnAt ? 'Withdrawn' : 'Expired'}</span>}</td>
+                  <td className="nowrap">{new Date(c.expiresAt).toLocaleDateString('en-IN')}</td>
+                  <td><div className="consent-status">
+                    {active ? <span className="pill green">Active</span> : <span className={'pill ' + (c.withdrawnAt ? 'red' : 'gray')}>{c.withdrawnAt ? 'Withdrawn' : 'Expired'}</span>}
+                    {!readOnly && (active
+                      ? <button className="btn-withdraw" disabled={busy === c.id} onClick={() => withdraw(c)}>{busy === c.id ? '…' : 'Withdraw'}</button>
+                      : c.withdrawnAt && <button className="btn-withdraw" disabled>Revoked</button>)}
+                  </div></td>
                 </tr>
               )
             })}
@@ -130,8 +154,16 @@ export function ConsentCenter({ consents, dpdp, onChange, showUser }) {
       </div>
       {dpdp && (
         <div className="dpdp-terms">
-          <span>👁 Right to access & correct</span><span>🗑 Right to erasure</span><span>📮 DPO: {dpdp.dpo.email}</span><span>⚖ Grievance: {dpdp.grievance.email}</span>
+          <span>⚙️ Right to access & correct</span><span>🗑️ Right to erasure</span><span>🛡️ DPO: {dpdp.dpo.email}</span><span>✉️ Grievance: {dpdp.grievance.email}</span>
         </div>
+      )}
+      {note && createPortal(
+        <div className="consent-toast" role="status">
+          <b>✅ Consent withdrawn · {note.id}</b>
+          <span>Future data sharing with {note.partnerName} has been stopped under the DPDP Act 2023. They may keep already-shared data only for the {dpdp?.retentionDays ?? 180}-day retention period, then must delete it.</span>
+          <button className="link" onClick={() => setNote(null)}>Dismiss</button>
+        </div>,
+        document.body,
       )}
     </div>
   )

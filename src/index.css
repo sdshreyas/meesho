@@ -804,3 +804,27 @@ details summary { cursor: pointer; font-size: 13px; color: var(--brand); font-we
 .mbar-track { height: 10px; background: var(--surface-2); border-radius: 6px; overflow: hidden; }
 .mbar-track div { height: 100%; background: var(--brand); border-radius: 6px; min-width: 4px; }
 .mbar small { grid-column: 1 / -1; margin-top: -4px; }
+
+/* DPDP consent ledger */
+.consents-card { position: relative; }
+.consent-table td { vertical-align: top; }
+.consent-table tr.revoked td { opacity: .72; }
+.consent-table tr.revoked td:last-child { opacity: 1; }
+.data-tags { display: flex; flex-wrap: wrap; gap: 4px; max-width: 190px; }
+.consent-table td:nth-child(4) { min-width: 140px; }
+.consent-status { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; }
+.data-tag { font-size: 11px; background: var(--brand-50); color: var(--brand); border-radius: 8px; padding: 1px 7px; white-space: nowrap; }
+.pill.red { background: var(--red-50); color: var(--red); }
+.pill.gray { background: var(--surface-2); color: var(--muted); }
+.btn-withdraw { border: 1px solid var(--brand); color: var(--brand); background: transparent; border-radius: 8px; padding: 3px 10px; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.btn-withdraw:hover:not(:disabled) { background: var(--brand-50); }
+.btn-withdraw:disabled { border-color: var(--line); color: var(--muted); cursor: default; }
+.consent-toast { position: fixed; right: 20px; bottom: 20px; z-index: 3000; width: min(380px, calc(100% - 32px)); background: var(--surface); color: var(--text); border: 1px solid var(--green); border-left: 5px solid var(--green); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,.22); padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; font-size: 13px; animation: toast-in .3s ease-out; }
+@keyframes toast-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+.consent-toast .link { align-self: flex-end; }
+[data-theme='dark'] .pill.red { background: #4a1820; color: #ff8a9a; }
+[data-theme='dark'] .data-tag { background: #45203a; color: #f9a8d4; }
+.consent-table code { display: inline-block; max-width: 118px; word-break: break-all; font-size: 12px; }
+.consent-table th, .consent-table td { padding-left: 8px; padding-right: 8px; }
+.consent-table td { white-space: normal; }
+.consent-table td:nth-child(7) { white-space: nowrap; }
