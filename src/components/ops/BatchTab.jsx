@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Bar, BarChart, CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip as RTooltip, XAxis, YAxis } from 'recharts'
 import { api } from '../../api.js'
-import { Kpi, STAGE_COLOR, num, pct } from './common.jsx'
+import { Kpi, STAGE_COLOR, num, pct, utilTone } from './common.jsx'
 import { StageChart } from './OptimizerTab.jsx'
 
 const BUCKET_COLOR = {
@@ -135,6 +135,28 @@ export default function BatchTab({ network }) {
               </table>
             </div>
             <small className="muted">* Total = line-haul cost + average wait × delay cost.</small>
+          </div>
+
+          <div className="box">
+            <b>🏭 Storage capacity at sort centres & bases (items on the floor, hour by hour)</b>
+            <small className="muted">Every parcel is counted on a site's floor from the moment it arrives until its truck or feeder leaves, so the dispatch rule above changes these numbers too: trucks that wait to fill up keep more items on the floor. The 95th-percentile hour is the nightly peak most sites are sized for. Change a site's capacity in 🧪 New DC simulator.</small>
+            <div className="table-wrap">
+              <table className="sku-table">
+                <thead><tr><th>Site</th><th>Capacity (items)</th><th>Average on floor</th><th>Peak hour (95th pct)</th><th>Highest hour</th><th>Hours over capacity</th></tr></thead>
+                <tbody>
+                  {data.dcCapacity.map((d) => (
+                    <tr key={d.id}>
+                      <td><b>{d.name.replace('Valmo ', '')}</b></td>
+                      <td>{num(d.capacity)}</td>
+                      <td>{num(d.avgHeld)} <small className="muted">({pct(d.avgUse)})</small></td>
+                      <td><span className={'pill ' + utilTone(d.p95Use)}>{pct(d.p95Use)}</span> <small className="muted">{num(d.p95Held)}</small></td>
+                      <td>{num(d.peakHeld)} <small className="muted">({pct(d.peakUse)})</small></td>
+                      <td>{d.hoursOver ? <span className={d.shareOver > 0.1 ? 'down' : ''}>{d.hoursOver} h <small className="muted">({pct(d.shareOver)})</small></span> : <span className="green">none</span>}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
 
           <div className="box">

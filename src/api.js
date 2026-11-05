@@ -57,6 +57,7 @@ export const api = {
     quote: (body) => req('/logistics/quote', { method: 'POST', body }),
     optimize: (body = {}) => req('/logistics/optimize', { method: 'POST', body }),
     simulate: (body) => req('/logistics/simulate', { method: 'POST', body }),
+    sites: (body) => req('/logistics/sites', { method: 'POST', body }),
     batch: (body) => req('/logistics/batch', { method: 'POST', body }),
     suggest: (body = {}) => req('/logistics/suggest', { method: 'POST', body }),
   },

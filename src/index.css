@@ -954,3 +954,16 @@ details summary { cursor: pointer; font-size: 13px; color: var(--brand); font-we
 @media (prefers-reduced-motion: reduce) {
   .diya .flame, .lantern, .rangoli, .diwali-banner::before { animation: none; }
 }
+
+/* Ops: site capacity & delivery radius */
+.radius-input { display: inline-flex; align-items: center; gap: 6px; }
+.radius-input input[type='range'] { width: 110px; accent-color: #0ca678; }
+.radius-input input[type='number'] { width: 52px; padding: 3px 4px; border: 1px solid var(--input-line); border-radius: 6px; background: var(--surface); color: var(--text); font: inherit; font-size: 13px; }
+.radius-input small { color: var(--muted); }
+.proposal .radius-input input[type='range'] { width: 90px; }
+.fleet-input.wide { width: 96px; }
+.site-table td { vertical-align: middle; }
+.site-table tr.edited td { background: var(--amber-50); }
+.fleet-cell.changed .fleet-input { border-color: #f76707; box-shadow: 0 0 0 2px rgba(247, 103, 7, .2); }
+.fleet-cost { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; margin: 6px 0; }
+.map-legend { display: block; margin: 4px 2px 10px; }

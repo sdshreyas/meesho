@@ -85,22 +85,34 @@ export const CITIES = RAW_CITIES.map(([name, lat, lng, state, pop, tier, special
 }))
 export const cityById = Object.fromEntries(CITIES.map((c) => [c.id, c]))
 
+const DC_TYPES_RADIUS = { sort: 20, hub: 15 }
+
 // Valmo's current network. type: 'sort' = large sort centre, 'hub' = regional hub.
+// capacity = items the site can hold on its floor at once (racks + staging lanes, real scale), sized for the nightly peak.
 // Fleet is filled in from history (see defaultFleet in optimizer.js).
 export const BASE_DCS = [
-  ['Gurugram', 'sort', 28.46, 77.03], ['Bhiwandi', 'sort', 19.28, 73.05], ['Hoskote', 'sort', 13.07, 77.8],
-  ['Kolkata', 'sort', 22.57, 88.36], ['Ahmedabad', 'sort', 23.02, 72.57], ['Hyderabad', 'sort', 17.39, 78.49],
-  ['Chennai', 'sort', 13.08, 80.27], ['Nagpur', 'hub', 21.15, 79.09], ['Jaipur', 'hub', 26.91, 75.79],
-  ['Lucknow', 'hub', 26.85, 80.95], ['Patna', 'hub', 25.59, 85.14], ['Indore', 'hub', 22.72, 75.86],
-  ['Kochi', 'hub', 9.93, 76.27], ['Ludhiana', 'hub', 30.9, 75.86], ['Surat', 'hub', 21.17, 72.83],
-  ['Guwahati', 'hub', 26.14, 91.74], ['Bhubaneswar', 'hub', 20.3, 85.82], ['Pune', 'hub', 18.52, 73.86],
-].map(([name, type, lat, lng]) => ({ id: 'DC-' + name, name: `${type === 'sort' ? 'Valmo Sort Centre' : 'Valmo Base'}, ${name}`, city: name, type, lat, lng }))
+  ['Gurugram', 'sort', 28.46, 77.03, 220000], ['Bhiwandi', 'sort', 19.28, 73.05, 75000], ['Hoskote', 'sort', 13.07, 77.8, 85000],
+  ['Kolkata', 'sort', 22.57, 88.36, 50000], ['Ahmedabad', 'sort', 23.02, 72.57, 65000], ['Hyderabad', 'sort', 17.39, 78.49, 55000],
+  ['Chennai', 'sort', 13.08, 80.27, 40000], ['Nagpur', 'hub', 21.15, 79.09, 20000], ['Jaipur', 'hub', 26.91, 75.79, 70000],
+  ['Lucknow', 'hub', 26.85, 80.95, 50000], ['Patna', 'hub', 25.59, 85.14, 35000], ['Indore', 'hub', 22.72, 75.86, 40000],
+  ['Kochi', 'hub', 9.93, 76.27, 35000], ['Ludhiana', 'hub', 30.9, 75.86, 90000], ['Surat', 'hub', 21.17, 72.83, 50000],
+  ['Guwahati', 'hub', 26.14, 91.74, 15000], ['Bhubaneswar', 'hub', 20.3, 85.82, 15000], ['Pune', 'hub', 18.52, 73.86, 30000],
+].map(([name, type, lat, lng, capacity]) => ({
+  id: 'DC-' + name, name: `${type === 'sort' ? 'Valmo Sort Centre' : 'Valmo Base'}, ${name}`, city: name, type, lat, lng,
+  capacity, radiusKm: DC_TYPES_RADIUS[type],
+}))
 
-// Service reach and fixed cost per DC type (fixed cost is per month at real scale)
+// Service reach and fixed cost per DC type (fixed cost is per month at real scale).
+// radiusKm = direct-delivery zone around the site (Pilots deliver straight from the site, no Airhub hop);
+// peakShare = share of a day's parcels on the floor at the nightly peak (the night feeder brings them in together).
 export const DC_TYPES = {
-  sort: { label: 'Sort Centre', firstMileKm: 140, lastMileKm: 110, airhubKm: 320, sortFee: 2.2, fixedMonthly: 4500000 },
-  hub: { label: 'Valmo Base', firstMileKm: 120, lastMileKm: 150, airhubKm: 260, sortFee: 1.8, fixedMonthly: 1500000 },
+  sort: { label: 'Sort Centre', firstMileKm: 140, lastMileKm: 110, airhubKm: 320, sortFee: 2.2, fixedMonthly: 4500000, radiusKm: 20, capacity: 150000, peakShare: 0.8 },
+  hub: { label: 'Valmo Base', firstMileKm: 120, lastMileKm: 150, airhubKm: 260, sortFee: 1.8, fixedMonthly: 1500000, radiusKm: 15, capacity: 60000, peakShare: 0.8 },
 }
+export const MAX_RADIUS_KM = 30
+export const MIN_RADIUS_KM = 5
+// spread of a city's customers around its centre, by tier (km)
+export const CITY_SPREAD_KM = { 1: 25, 2: 15, 3: 10 }
 
 // Generic external logistics partners (rate per shipment, real ₹)
 export const PARTNERS = [

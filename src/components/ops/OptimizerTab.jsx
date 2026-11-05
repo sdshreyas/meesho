@@ -282,11 +282,16 @@ function NetworkOptimiser({ network }) {
           <button className="btn-primary sm" disabled={busy || !Object.keys(draft).length} onClick={() => run({ fleet: draft })}>{busy ? 'Running…' : 'Apply & re-optimise'}</button>
         </div>
       </div>
-      <small className="muted">Trucks contracted at each origin sort centre, by type. "Need/day" is the vehicle-days the optimised plan uses (a long lane ties a truck up for several days of round trip). Fleet usage compares the capacity needed with the capacity contracted, so swapping a 19 ft for a 32 ft still counts; above 100% the shortfall is hired on the spot market at a premium.</small>
+      <div className="fleet-cost">
+        <span>🚚 Idle contracted trucks: <b>{money(optimized.totals.idleFleet)}</b>{per} retainer</span>
+        <span>⛟ Spot-hire premium where contracts run short is inside the line-haul cost above</span>
+        {Object.keys(draft).length > 0 && <b className="down">You have unsaved fleet changes — press "Apply & re-optimise"</b>}
+      </div>
+      <small className="muted">Trucks contracted at each origin sort centre, by type. Contracted trucks cost a {pct(network.model.cost.idleRetainer)} retainer of their daily driver + fixed cost on days they sit idle, so over-contracting costs money too. "Need/day" is the vehicle-days the optimised plan uses (a long lane ties a truck up for several days of round trip). Fleet usage compares the capacity needed with the capacity contracted, so swapping a 19 ft for a 32 ft still counts; above 100% the shortfall is hired on the spot market at a premium.</small>
       <div className="table-wrap">
         <table className="sku-table fleet-table">
           <thead>
-            <tr><th>Sort centre / Base</th><th>Parcels / day</th><th>Truck fill</th><th>Fleet usage</th>{data.lineHaulTypes.map((t) => <th key={t}>{data.vehicles[t].label}<small className="muted block">contracted · need/day</small></th>)}</tr>
+            <tr><th>Sort centre / Base</th><th>Parcels / day</th><th>Storage use<small className="muted block">peak items / capacity</small></th><th>Truck fill</th><th>Fleet usage</th>{data.lineHaulTypes.map((t) => <th key={t}>{data.vehicles[t].label}<small className="muted block">contracted · need/day</small></th>)}</tr>
           </thead>
           <tbody>
             {data.dcs.map((dc) => {
@@ -295,10 +300,11 @@ function NetworkOptimiser({ network }) {
                 <tr key={dc.id}>
                   <td><b>{dc.name.replace('Valmo ', '')}</b><small className="muted block">{dc.typeLabel}</small></td>
                   <td>{num(u.orders ?? 0)}</td>
+                  <td>{u.capUse == null ? '—' : <><span className={'pill ' + utilTone(u.capUse)}>{pct(u.capUse)}</span><small className="muted block">{num(u.itemsHeld)} / {num(u.capacity)}</small></>}</td>
                   <td>{u.fill == null ? '—' : <span className={'pill ' + (u.fill > 0.75 ? 'green' : u.fill > 0.5 ? 'amber' : 'red')}>{pct(u.fill)}</span>}</td>
                   <td>{u.fleetUse == null ? '—' : <span className={'pill ' + utilTone(u.fleetUse)}>{u.fleetUse > 9 ? 'all spot' : pct(u.fleetUse)}</span>}</td>
                   {data.lineHaulTypes.map((t) => (
-                    <td key={t} className="fleet-cell">
+                    <td key={t} className={'fleet-cell' + (draft[dc.id]?.[t] != null && draft[dc.id][t] !== data.fleet[dc.id]?.[t] ? ' changed' : '')}>
                       <input className="fleet-input" type="number" min="0" value={fleetVal(dc.id, t)} onChange={(e) => setFleet(dc.id, t, e.target.value)} />
                       <small className="muted">{u.usage[t]?.need ? u.usage[t].need.toFixed(1) : '—'}</small>
                     </td>

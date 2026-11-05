@@ -10,7 +10,7 @@
 // Every route is priced stage by stage. Shared vehicles (pickup, feeder, line haul) are costed for
 // the whole day's volume on that leg, choosing the vehicle mix with the lowest cost (= highest
 // useful fill), and each parcel pays its volume share. All money is real ₹ per parcel.
-import { CITIES, DC_TYPES, PARTNERS, SCALE, cityById, km, sellerById, ORDERS } from './data.js'
+import { CITIES, CITY_SPREAD_KM, DC_TYPES, PARTNERS, SCALE, cityById, km, sellerById, ORDERS } from './data.js'
 
 export const VEHICLES = {
   bike: { label: 'Pilot 2-wheeler', volM3: 0.15, kg: 30, perKm: 2.5, driverDay: 0, fixedDay: 0, tollPerKm: 0, use: 'Pickup & last mile (paid per piece)' },
@@ -43,6 +43,9 @@ export const COST = {
   handoverDiscount: 0.85, // 3PL last-mile rate when Valmo hands over bulk at a sort centre
   injectionDiscount: 0.7, // 3PL pickup rate when it drops bulk into a Valmo sort centre
   hybridMaxKm: 400,
+  overflowFee: 12, // ₹ per parcel through an over-full site (overtime shifts, temporary space, double handling)
+  idleRetainer: 0.6, // share of a contracted truck's daily driver + fixed cost paid when it sits idle
+  capacityCostPerItemMonth: 28, // ₹ per extra item of storage per month (rent, racking, staff)
 }
 // Failed first attempts and return-to-origin, by payment type and tier (industry ranges for COD-heavy tier 2/3)
 export const FAIL_RATE = { prepaid: 0.07, cod: { 1: 0.15, 2: 0.22, 3: 0.28 } }
@@ -108,6 +111,20 @@ export function planFleet(volM3, kg, types, tripCost) {
 
 // ---------- network ----------
 
+export const capacityOf = (dc) => dc.capacity ?? DC_TYPES[dc.type].capacity
+export const radiusOf = (dc) => dc.radiusKm ?? DC_TYPES[dc.type].radiusKm
+
+// share of a disc of radius R (the city's customers) that lies inside a disc of radius r at distance d
+function overlapShare(d, r, R) {
+  if (d >= r + R) return 0
+  if (d + R <= r) return 1
+  if (d + r <= R) return (r * r) / (R * R)
+  const a = r * r * Math.acos((d * d + r * r - R * R) / (2 * d * r))
+  const b = R * R * Math.acos((d * d + R * R - r * r) / (2 * d * R))
+  const c = 0.5 * Math.sqrt((-d + r + R) * (d + r - R) * (d - r + R) * (d + r + R))
+  return Math.min(1, Math.max(0, (a + b - c) / (Math.PI * R * R)))
+}
+
 /** Airhubs, coverage and distances for a set of sort centres / bases. */
 export function prepareNetwork(dcs) {
   const byDist = (pt) => dcs.map((dc) => ({ dc, d: km(pt, dc) })).sort((a, b) => a.d - b.d)
@@ -131,15 +148,18 @@ export function prepareNetwork(dcs) {
     sellerDcs[s.id] = byDist(s)
   }
   const laneKm = {}
+  const direct = {}
   return {
     dcs, airhubs, sellerAh, sellerDcs, cityDcs,
     laneKm: (a, b) => (laneKm[a.id + b.id] ??= a.id === b.id ? 0 : km(a, b)),
+    // share of a city's customers inside a site's direct-delivery radius
+    direct: (dc, city) => (direct[dc.id + city.id] ??= overlapShare(km(dc, city), radiusOf(dc), CITY_SPREAD_KM[city.tier])),
   }
 }
 
 // ---------- stage costs ----------
 
-const emptyLoad = () => ({ seller: {}, ahOut: {}, ahIn: {}, lane: {}, premium: {} })
+const emptyLoad = () => ({ seller: {}, ahOut: {}, ahIn: {}, lane: {}, premium: {}, congestion: {} })
 const real = (x) => x * SCALE
 
 function firstMile(order, ahLink, load) {
@@ -176,11 +196,13 @@ function lineHaul(order, from, to, net, load) {
   return { cost: ((plan.cost * order.volume) / vol) * (1 + premium), plan, km: dist, premium, key }
 }
 
-function lastMile(order, city, load) {
+function lastMile(order, city, load, routeKm = COST.routeKm[city.tier]) {
   const tier = city.tier
   const inbound = real(load.ahIn[city.id]?.n ?? 1)
-  const drops = COST.dropsPerDay[tier] * (0.85 + 0.3 * Math.min(1, inbound / 6000))
-  const perAttempt = COST.pilotDayEarning / drops + (2 * COST.routeKm[tier] * VEHICLES.bike.perKm) / drops
+  // longer routes (e.g. a wide direct-delivery radius) mean fewer drops a day
+  const spread = Math.min(1.2, Math.max(0.55, Math.sqrt(COST.routeKm[tier] / routeKm)))
+  const drops = COST.dropsPerDay[tier] * (0.85 + 0.3 * Math.min(1, inbound / 6000)) * spread
+  const perAttempt = COST.pilotDayEarning / drops + (2 * routeKm * VEHICLES.bike.perKm) / drops
   const f = order.cod ? FAIL_RATE.cod[tier] : FAIL_RATE.prepaid
   const extraAttempts = f + f * f // up to 3 attempts
   const pilot = perAttempt * (1 + extraAttempts * COST.reattemptShare)
@@ -247,7 +269,7 @@ function valmoRoute(mode, order, net, load, { scO, scD, fm3pl, lm3pl }) {
     const q = partnerQuote(PARTNERS[2], seller, scO, { ...order, cod: false })
     if (!q) return null
     stages.firstMile = q.forward * COST.injectionDiscount
-    stages.sourceSort = DC_TYPES[scO.type].sortFee
+    stages.sourceSort = DC_TYPES[scO.type].sortFee + (load.congestion[scO.id] ?? 0)
     fleet.firstMile = { label: 'Partner Z pickup → injected at sort centre' }
     notes.push(`Partner Z picks up and injects into ${scO.name} (${q.zone} rate × ${COST.injectionDiscount})`)
   } else {
@@ -256,7 +278,7 @@ function valmoRoute(mode, order, net, load, { scO, scD, fm3pl, lm3pl }) {
     fleet.firstMile = { label: VEHICLES[fm.vehicle.type].label, util: fm.vehicle.util, km: fm.km }
     path.push(node('airhub', ahO.ah))
     const fd = feeder(order, km(ahO.ah, scO), load.ahOut[ahO.ah.cityId])
-    stages.sourceSort = fd.cost + COST.airhubHandling + DC_TYPES[scO.type].sortFee
+    stages.sourceSort = fd.cost + COST.airhubHandling + DC_TYPES[scO.type].sortFee + (load.congestion[scO.id] ?? 0)
     fleet.feederOut = fd.plan ? { label: fd.plan.label, util: fd.plan.util, km: fd.km } : { label: 'Airhub inside sort-centre yard', km: fd.km }
   }
   path.push(node(scO.type, scO))
@@ -269,24 +291,30 @@ function valmoRoute(mode, order, net, load, { scO, scD, fm3pl, lm3pl }) {
   }
 
   let lmCost
+  const destCongestion = scD.id === scO.id ? 0 : load.congestion[scD.id] ?? 0
   if (lm3pl) {
     const q = partnerQuote(PARTNERS[2], scD, city, order)
     if (!q) return null
-    stages.destSort = DC_TYPES[scD.type].sortFee
+    stages.destSort = DC_TYPES[scD.type].sortFee + destCongestion
     lmCost = (q.base + q.extra) * COST.handoverDiscount + q.cod
     stages.lastMile = lmCost
     fleet.lastMile = { label: 'Partner Z last mile' }
     notes.push(`Handed to Partner Z at ${scD.name} (${q.zone} rate × ${COST.handoverDiscount})`)
   } else {
+    // customers inside the destination site's radius are delivered straight from the site
+    const share = net.direct(scD, city)
     const fd = feeder(order, km(scD, ahD), load.ahIn[city.id]?.vol)
-    stages.destSort = DC_TYPES[scD.type].sortFee + fd.cost
+    stages.destSort = DC_TYPES[scD.type].sortFee + fd.cost * (1 - share) + destCongestion
     fleet.feederIn = fd.plan ? { label: fd.plan.label, util: fd.plan.util, km: fd.km } : { label: 'Airhub inside sort-centre yard', km: fd.km }
     path.push(node('airhub', ahD))
     const lm = lastMile(order, city, load)
-    stages.lastMile = lm.cost
-    lmCost = lm.cost
+    const lmDirect = share ? lastMile(order, city, load, Math.max(COST.routeKm[city.tier], radiusOf(scD) * 0.7)) : lm
+    lmCost = lm.cost * (1 - share) + (lmDirect.cost - COST.airhubHandling) * share
+    stages.lastMile = lmCost
     fleet.lastMile = { label: `Pilot 2-wheeler · ${Math.round(lm.drops)} drops/day` }
     notes.push(`Last mile: ₹${lm.perAttempt.toFixed(1)} per attempt × ${lm.attempts.toFixed(2)} expected attempts (${Math.round(lm.failRate * 100)}% first-attempt failure) + Airhub fees${lm.cod ? ` + ₹${lm.cod.toFixed(1)} COD handling` : ''}`)
+    if (share > 0.01) notes.push(`${Math.round(share * 100)}% of ${city.name} customers are inside ${scD.name}'s ${radiusOf(scD)} km radius: delivered straight from the site (no feeder or Airhub hop) on longer ${Math.round(Math.max(COST.routeKm[city.tier], radiusOf(scD) * 0.7))} km routes`)
+    if (destCongestion) notes.push(`${scD.name} is over capacity: +₹${destCongestion.toFixed(1)} congestion per parcel`)
   }
   path.push(node('customer', city))
   const forwardToHub = stages.firstMile + stages.sourceSort + stages.lineHaul + stages.destSort
@@ -401,20 +429,28 @@ export function allocateDay(orders, net, fleet, policy = 'optimized') {
   // pass 2: price at those volumes and choose
   choice = orders.map((o) => pick(options(o, net, load)))
   load = tally(orders, choice)
-  // pass 3: contracted fleet check → spot premium where trucks run short, re-price
-  if (fleet && policy !== 'external') {
-    const { need } = lanePlans(load)
-    for (const [sc, types] of Object.entries(need)) {
-      if (!fleet[sc]) continue // unplanned site (scenario candidate): no contracted-fleet limit
-      const want = Object.entries(types).reduce((s, [t, n]) => s + n * VEHICLES[t].volM3, 0)
-      const have = Object.entries(types).reduce((s, [t, n]) => s + Math.min(n, fleet[sc]?.[t] ?? 0) * VEHICLES[t].volM3, 0)
-      if (have >= want) continue
-      for (const key of Object.keys(load.lane)) if (load.lane[key].from === sc) load.premium[key] = COST.spotPremium * (1 - have / want)
+  // pass 3: contracted fleet check → spot premium where trucks run short; site capacity check →
+  // congestion cost where more items pile up than the floor can hold; then re-price
+  if (policy !== 'external') {
+    if (fleet) {
+      const { need } = lanePlans(load)
+      for (const [sc, types] of Object.entries(need)) {
+        if (!fleet[sc]) continue // unplanned site (scenario candidate): no contracted-fleet limit
+        const want = Object.entries(types).reduce((s, [t, n]) => s + n * VEHICLES[t].volM3, 0)
+        const have = Object.entries(types).reduce((s, [t, n]) => s + Math.min(n, fleet[sc]?.[t] ?? 0) * VEHICLES[t].volM3, 0)
+        if (have >= want) continue
+        for (const key of Object.keys(load.lane)) if (load.lane[key].from === sc) load.premium[key] = COST.spotPremium * (1 - have / want)
+      }
     }
-    choice = orders.map((o) => pick(options(o, net, load)))
-    const premium = load.premium
-    load = tally(orders, choice)
-    load.premium = premium
+    load.congestion = congestionFor(itemsHeld(choice, net), net)
+    if (fleet || Object.keys(load.congestion).length) {
+      choice = orders.map((o) => pick(options(o, net, load)))
+      const { premium } = load
+      load = tally(orders, choice)
+      load.premium = premium
+      // final prices use the congestion of where parcels actually ended up
+      load.congestion = congestionFor(itemsHeld(choice, net), net)
+    }
   }
   const final = orders.map((o, i) => {
     const c = choice[i]
@@ -422,6 +458,28 @@ export function allocateDay(orders, net, fleet, policy = 'optimized') {
     return options(o, net, load).find((x) => x.mode === c.mode) ?? c
   })
   return { choice: final, load, ...lanePlans(load) }
+}
+
+/** Per-parcel congestion cost at every site holding more items than its capacity. */
+function congestionFor(held, net) {
+  const out = {}
+  for (const dc of net.dcs) {
+    const h = held[dc.id] ?? 0
+    if (h > capacityOf(dc)) out[dc.id] = COST.overflowFee * (1 - capacityOf(dc) / h)
+  }
+  return out
+}
+
+/** Items on each site's floor at the nightly peak (real scale) for one day's choices. */
+export function itemsHeld(choice, net) {
+  const held = {}
+  const dwell = Object.fromEntries(net.dcs.map((d) => [d.id, DC_TYPES[d.type].peakShare]))
+  for (const c of choice) {
+    if (!c || !isValmo(c.mode)) continue
+    if (c.originSc) held[c.originSc] = (held[c.originSc] ?? 0) + SCALE * dwell[c.originSc]
+    if (c.destSc && c.destSc !== c.originSc) held[c.destSc] = (held[c.destSc] ?? 0) + SCALE * dwell[c.destSc]
+  }
+  return held
 }
 
 // ---------- fleet, periods, simulation ----------
@@ -475,10 +533,36 @@ export function simulate(orders, dcs, fleet, policy = 'optimized') {
   const totals = { cost: 0, orders: 0, byMode: {}, costByMode: {}, stages: zeroStages() }
   const monthly = {}
   const sc = {}
-  const scOf = (id) => (sc[id] ??= { parcels: 0, vol: 0, cap: 0, need: {} })
+  const scOf = (id) => (sc[id] ??= { parcels: 0, vol: 0, cap: 0, need: {}, held: 0, peak: 0, congestion: 0, direct: 0 })
+  let idleCost = 0
+  let congestionCost = 0
   for (const [day, dayOrders] of days) {
-    const { choice, plans, need } = allocateDay(dayOrders, net, fleet, policy)
+    const { choice, plans, need, load } = allocateDay(dayOrders, net, fleet, policy)
+    const held = itemsHeld(choice, net)
+    for (const [id, h] of Object.entries(held)) {
+      const s = scOf(id)
+      s.held += h
+      s.peak = Math.max(s.peak, h)
+      const perParcel = load.congestion[id] ?? 0
+      const dayCong = (h / DC_TYPES[net.dcs.find((d) => d.id === id).type].peakShare) * perParcel
+      s.congestion += dayCong
+      congestionCost += dayCong
+    }
+    // contracted trucks that sit idle still draw a retainer
+    let dayIdle = 0
+    if (fleet && policy !== 'external') {
+      for (const dc of dcs) {
+        const f = fleet[dc.id]
+        if (!f) continue
+        for (const t of LINE_HAUL) {
+          const idle = Math.max(0, (f[t] ?? 0) - (need[dc.id]?.[t] ?? 0))
+          dayIdle += idle * (VEHICLES[t].driverDay + VEHICLES[t].fixedDay) * COST.idleRetainer
+        }
+      }
+    }
+    idleCost += dayIdle
     const m = (monthly[day.slice(0, 7)] ??= { month: day.slice(0, 7), cost: 0, orders: 0 })
+    m.cost += dayIdle / SCALE
     for (const c of choice) {
       totals.cost += c.cost
       totals.orders += 1
@@ -489,6 +573,7 @@ export function simulate(orders, dcs, fleet, policy = 'optimized') {
       m.orders += 1
       if (c.originSc) scOf(c.originSc).parcels += 1
       if (c.destSc && c.destSc !== c.originSc) scOf(c.destSc).parcels += 1
+      if (c.destSc && isValmo(c.mode) && c.destAh) scOf(c.destSc).direct += net.direct(net.dcs.find((d) => d.id === c.destSc), cityById[c.destAh])
     }
     for (const p of Object.values(plans)) {
       const s = scOf(p.from)
@@ -504,8 +589,13 @@ export function simulate(orders, dcs, fleet, policy = 'optimized') {
     const s = sc[dc.id] ?? { parcels: 0, vol: 0, cap: 0, need: {} }
     const needVol = LINE_HAUL.reduce((a, t) => a + ((s.need[t] ?? 0) / n) * VEHICLES[t].volM3, 0)
     const haveVol = LINE_HAUL.reduce((a, t) => a + (fleet?.[dc.id]?.[t] ?? 0) * VEHICLES[t].volM3, 0)
+    const avgHeld = (s.held ?? 0) / n
     return {
       id: dc.id, name: dc.name, type: dc.type,
+      capacity: capacityOf(dc), radiusKm: radiusOf(dc),
+      itemsHeld: Math.round(avgHeld), peakHeld: Math.round(s.peak ?? 0), capUse: avgHeld / capacityOf(dc), peakUse: (s.peak ?? 0) / capacityOf(dc),
+      congestionPerDay: (s.congestion ?? 0) / n,
+      directPerDay: Math.round(((s.direct ?? 0) / n) * SCALE),
       orders: Math.round((s.parcels / n) * SCALE),
       fill: s.cap ? s.vol / s.cap : null,
       fleetUse: haveVol ? needVol / haveVol : needVol ? 9.99 : null,
@@ -517,12 +607,15 @@ export function simulate(orders, dcs, fleet, policy = 'optimized') {
     }
   })
   const scaleObj = (o) => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, v * SCALE]))
+  const realCost = totals.cost * SCALE + idleCost
   return {
     days: n,
     totals: {
-      cost: totals.cost * SCALE,
+      cost: realCost,
       orders: totals.orders * SCALE,
-      perOrder: totals.cost / Math.max(1, totals.orders),
+      perOrder: realCost / Math.max(1, totals.orders * SCALE),
+      idleFleet: idleCost,
+      congestion: congestionCost,
       byMode: scaleObj(totals.byMode),
       costByMode: scaleObj(totals.costByMode),
       stagesPerOrder: Object.fromEntries(Object.entries(totals.stages).map(([k, v]) => [k, v / Math.max(1, totals.orders)])),

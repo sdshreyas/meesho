@@ -2,7 +2,7 @@
 // Costs come from the day-by-day optimiser; timing comes from the network's fixed schedules plus
 // line-haul trucks that wait at the source sort centre until they are full enough to dispatch.
 import { SCALE, cityById, km, productById, sellerById } from './data.js'
-import { COST, FAIL_RATE, STAGES, VEHICLES, allocateDay, groupByDay, isValmo, lineHaulTrip, ordersBetween, prepareNetwork } from './optimizer.js'
+import { COST, FAIL_RATE, STAGES, VEHICLES, allocateDay, capacityOf, groupByDay, isValmo, lineHaulTrip, ordersBetween, prepareNetwork } from './optimizer.js'
 
 export const SCHEDULE = {
   sellerPackH: 3, // seller packs & manifests after the order
@@ -139,6 +139,7 @@ export function batchAnalysis(from, to, { dcs, fleet, threshold = 0.8, delayCost
         row.b.toSc = arriveSc + SCHEDULE.sortH - arriveAh
       }
       row.readyLh = arriveSc + SCHEDULE.sortH
+      row.arriveSc = arriveSc
       // stage 3: queue on the lane (resolved after all days are loaded)
       if (c.laneKey) {
         const plan = plans[c.laneKey]?.plan
@@ -164,15 +165,19 @@ export function batchAnalysis(from, to, { dcs, fleet, threshold = 0.8, delayCost
       row.b.waitSc = depart - row.readyLh
       row.b.lineHaul = row.chunks ? c.laneKm / SCHEDULE.lineHaulSpeed : 0
       const arriveDsc = depart + row.b.lineHaul
+      // time on each site's floor (for storage-capacity tracking)
+      row.atO = [row.arriveSc, depart]
       if (c.mode === 'hybrid_lm') {
         row.b.partner = SCHEDULE.hybridLastMileH * (0.8 + 0.4 * hash(o.id, 3))
         row.delivered = arriveDsc + row.b.partner
+        row.atD = c.destSc !== c.originSc ? [arriveDsc, arriveDsc + SCHEDULE.sortH + 2] : null
         continue
       }
       const ah = cityById[c.destAh]
       const scNode = net.dcs.find((x) => x.id === c.destSc)
       const feedDep = nextSlot(arriveDsc + SCHEDULE.sortH, SCHEDULE.destFeeder)
       const arriveAh = feedDep + km(scNode, ah) / SCHEDULE.feederSpeed + 0.5
+      row.atD = c.destSc !== c.originSc ? [arriveDsc, feedDep] : null
       row.b.toDestAirhub = arriveAh - arriveDsc
       const wave = nextSlot(arriveAh + 0.5, SCHEDULE.waves[city.tier])
       row.b.waitAirhub = wave - arriveAh
@@ -235,6 +240,34 @@ export function batchAnalysis(from, to, { dcs, fleet, threshold = 0.8, delayCost
     }
   }).sort((a, b) => b.parcels - a.parcels)
 
+  // items on each site's floor, hour by hour (real scale), against its storage capacity
+  const nDays = groupByDay(orders).length
+  const startH = 24 // skip the first day: the window starts with empty floors
+  const endH = Math.max(startH + 24, nDays * 24)
+  const occ = {}
+  const addStay = (dcId, [a, b]) => {
+    const from = Math.max(startH, Math.floor(a))
+    const to = Math.min(endH, Math.ceil(b))
+    if (to <= from) return
+    const arr = (occ[dcId] ??= new Float64Array(endH))
+    for (let h = from; h < to; h++) arr[h] += SCALE
+  }
+  for (const r of rows) {
+    if (!isValmo(r.c.mode) || !r.atO) continue
+    if (r.c.originSc) addStay(r.c.originSc, r.atO)
+    if (r.atD) addStay(r.c.destSc, r.atD)
+  }
+  const span = endH - startH
+  const dcCapacity = dcs.map((dc) => {
+    const arr = occ[dc.id]
+    const hours = arr ? Array.from(arr.subarray(startH, endH)) : [0]
+    const avgHeld = hours.reduce((x, y) => x + y, 0) / span
+    const p95 = pct(hours, 0.95)
+    const peak = Math.max(...hours)
+    const over = hours.filter((v) => v > capacityOf(dc)).length
+    return { id: dc.id, name: dc.name, type: dc.type, capacity: capacityOf(dc), avgHeld: Math.round(avgHeld), p95Held: Math.round(p95), peakHeld: Math.round(peak), avgUse: avgHeld / capacityOf(dc), p95Use: p95 / capacityOf(dc), peakUse: peak / capacityOf(dc), hoursOver: over, shareOver: over / span }
+  }).sort((a, b) => b.p95Use - a.p95Use)
+
   const hist = [0, 0, 0, 0, 0, 0, 0, 0]
   for (const h of totalH) hist[Math.min(7, Math.floor(h / 24))] += SCALE
   const n = rows.length || 1
@@ -265,6 +298,7 @@ export function batchAnalysis(from, to, { dcs, fleet, threshold = 0.8, delayCost
     recommended: best.threshold,
     products: products.slice(0, 25),
     lanes: laneRows.slice(0, 15),
+    dcCapacity,
     histogram: hist.map((v, i) => ({ days: i === 7 ? '7+' : `${i}–${i + 1}`, orders: v })),
     samples,
   }
