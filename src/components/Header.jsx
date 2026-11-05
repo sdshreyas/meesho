@@ -7,7 +7,7 @@ import ThemeToggle from './ThemeToggle.jsx'
 import { track } from '../tracking/tracker.js'
 
 export default function Header() {
-  const { profile, logout, lang, setLang, translating, trSource, nudges, setNudges, cart, t, tx } = useApp()
+  const { profile, logout, lang, setLang, translating, trSource, nudges, setNudges, cart, t, tx, diwali, toggleDiwali } = useApp()
   const navigate = useNavigate()
   const [params] = useSearchParams()
   const [q, setQ] = useState(params.get('q') ?? '')
@@ -43,6 +43,11 @@ export default function Header() {
 
         <div className="header-controls">
           <ThemeToggle />
+          {(isBuyer || isSeller) && (
+            <button className={'diwali-toggle' + (diwali ? ' on' : '')} onClick={toggleDiwali} title={t('diwaliToggle')} aria-pressed={diwali}>
+              🪔 <span>{t('diwaliToggle')}</span>
+            </button>
+          )}
           <div className="account">
             <span className="avatar sm">{profile.name.split(' ').map((w) => w[0]).join('')}</span>
             <span className="account-info">

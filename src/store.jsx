@@ -47,6 +47,7 @@ export function AppProvider({ children }) {
   const [session, setSession] = usePersisted('session', null)
   const [theme, setTheme] = usePersisted('theme', typeof matchMedia !== 'undefined' && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
   const [wishlists, setWishlists] = usePersisted('wishlist', {})
+  const [diwali, setDiwali] = usePersisted('diwali', true)
   const [tr, setTr] = useState({ lang: 'en', map: {}, source: null })
   const [translating, setTranslating] = useState(false)
 
@@ -70,6 +71,12 @@ export function AppProvider({ children }) {
   useEffect(() => {
     document.documentElement.dataset.look = feminine ? 'feminine' : 'classic'
   }, [feminine])
+  // Diwali festive skin for buyer & seller screens (UI only, can be switched off)
+  const festive = diwali && !!session && (profile.type === 'buyer' || profile.type === 'seller')
+  useEffect(() => {
+    document.documentElement.dataset.festive = festive ? 'diwali' : 'none'
+  }, [festive])
+  const toggleDiwali = useCallback(() => setDiwali((d) => !d), [setDiwali])
   const toggleTheme = useCallback(() => setTheme((t) => (t === 'dark' ? 'light' : 'dark')), [setTheme])
 
   const wishlist = wishlists[profile.id] ?? EMPTY_CART
@@ -151,14 +158,14 @@ export function AppProvider({ children }) {
     () => ({
       profile, profiles: PROFILES, switchProfile,
       session, login, logout,
-      theme, toggleTheme, feminine,
+      theme, toggleTheme, feminine, festive, diwali, toggleDiwali,
       wishlist, toggleWish,
       lang, setLang: setLangRaw, translating, trSource: tr.source,
       nudges, setNudges,
       cart, setCart, addToCart,
       t, tx,
     }),
-    [profile, switchProfile, session, login, logout, theme, toggleTheme, feminine, wishlist, toggleWish, lang, setLangRaw, translating, tr.source, nudges, setNudges, cart, setCart, addToCart, t, tx],
+    [profile, switchProfile, session, login, logout, theme, toggleTheme, feminine, festive, diwali, toggleDiwali, wishlist, toggleWish, lang, setLangRaw, translating, tr.source, nudges, setNudges, cart, setCart, addToCart, t, tx],
   )
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }

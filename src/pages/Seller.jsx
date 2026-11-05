@@ -6,6 +6,7 @@ import { useFetch } from '../useFetch.js'
 import { img } from '../components/ProductCard.jsx'
 import AudioSummary from '../components/AudioSummary.jsx'
 import SellerFinHub from '../components/fin/SellerFinHub.jsx'
+import { SellerDiwaliBanner } from '../components/Diwali.jsx'
 
 const STATUS_CLS = { s_reorder: 'red', s_healthy: 'green', s_overstock: 'amber' }
 
@@ -19,7 +20,7 @@ function Kpi({ label, value, tone }) {
 }
 
 export default function Seller() {
-  const { profile, t, tx } = useApp()
+  const { profile, t, tx, festive } = useApp()
   const { data: d } = useFetch(() => (profile.type === 'seller' ? api.sellerDashboard(profile.id) : Promise.resolve(null)), [profile.id])
   if (profile.type !== 'seller') return <Navigate to="/" replace />
   if (!d) return <main className="page"><div className="loading">…</div></main>
@@ -36,7 +37,9 @@ export default function Seller() {
         </div>
       </div>
 
-      <div className="festive-alert">🪔 {t('festiveAlert', { days: d.daysToFestival, pct: d.festivalUplift })}</div>
+      {festive
+        ? <SellerDiwaliBanner name={profile.owner.split(' ')[0]} alert={t('festiveAlert', { days: d.daysToFestival, pct: d.festivalUplift })} />
+        : <div className="festive-alert">🪔 {t('festiveAlert', { days: d.daysToFestival, pct: d.festivalUplift })}</div>}
 
       <SellerFinHub sellerId={profile.id} />
 

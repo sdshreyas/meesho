@@ -175,10 +175,11 @@ export function FinSahayak({ userId, name }) {
   const [msgs, setMsgs] = useState([{ role: 'bot', text: `Namaste ${name.split(' ')[0]}! I'm FinSahayak 🙏 Ask me about your Trust Score, loans, EMIs or insurance.` }])
   const [q, setQ] = useState('')
   const [busy, setBusy] = useState(false)
-  const end = useRef(null)
+  const chat = useRef(null)
   useEffect(() => {
-    end.current?.scrollIntoView({ block: 'nearest' }) // returns a Promise in newer browsers — don't hand it to React
-  }, [msgs])
+    // scroll only the chat box, never the page
+    if (chat.current) chat.current.scrollTop = chat.current.scrollHeight
+  }, [msgs, busy])
   const key = (() => {
     try {
       return localStorage.getItem('meesho.gemini.key') ?? ''
@@ -200,12 +201,11 @@ export function FinSahayak({ userId, name }) {
   return (
     <div className="box sahayak">
       <div className="box-head"><b>🙏 FinSahayak — your finance helper</b><small className="muted">{key ? 'Gemini' : 'Built-in answers (add a Gemini key at login for AI)'}</small></div>
-      <div className="chat">
+      <div className="chat" ref={chat}>
         {msgs.map((m, i) => (
           <div key={i} className={'bubble ' + m.role}>{render(m.text)}{m.source && <small className="muted">{m.source}</small>}</div>
         ))}
         {busy && <div className="bubble bot">…</div>}
-        <div ref={end} />
       </div>
       <div className="chips">
         {['How can I improve my score?', 'Which loan is cheapest?', 'Is the ₹2 shield worth it?', 'What is a KFS?'].map((s) => <button key={s} className="chip" onClick={() => ask(s)}>{s}</button>)}

@@ -38,7 +38,7 @@ export function Reasons({ reasons }) {
 }
 
 export default function ProductCard({ p, onAdd, compact, from = 'feed', query }) {
-  const { t, tx, wishlist, toggleWish, nudges } = useApp()
+  const { t, tx, wishlist, toggleWish, nudges, festive } = useApp()
   const off = Math.round((1 - p.price / p.mrp) * 100)
   const wished = wishlist.includes(p.id)
   return (
@@ -49,6 +49,7 @@ export default function ProductCard({ p, onAdd, compact, from = 'feed', query })
       <Link to={`/product/${p.id}`} state={{ from, query }} className="card-link">
         <div className="card-img">
           <img src={img(p.image)} alt={p.name} loading="lazy" />
+          {festive && p.tags?.includes('festive') && <span className="diwali-ribbon">🪔 {t('diwaliPick')}</span>}
         </div>
         <div className="card-body">
           <div className="card-name">{tx(p.name)}</div>

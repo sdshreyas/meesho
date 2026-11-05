@@ -7,6 +7,7 @@ import { langByCode } from '../data/languages.js'
 import { track } from '../tracking/tracker.js'
 import ProductCard from '../components/ProductCard.jsx'
 import BundleCard from '../components/BundleCard.jsx'
+import { DiwaliBanner } from '../components/Diwali.jsx'
 import { LOW_RETURN_PCT } from '../engine/config.js'
 import { SECTIONS } from '../mocks/userdb.js'
 
@@ -113,6 +114,7 @@ export default function Home() {
 
   return (
     <main className="page">
+      {home && <DiwaliBanner />}
       <section className="persona-hero">
         <div className="avatar">{initials}</div>
         <div className="persona-text">
